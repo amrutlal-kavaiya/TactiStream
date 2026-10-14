@@ -44,7 +44,7 @@ def run_or_exit[T](name: str, coroutine: Coroutine[Any, Any, T]) -> T:
 @app.command()
 def foundry(
     region: str | None = typer.Option(
-        None, envvar="AZURE_LOCATION", help="Region of the Foundry resource, echoed in the report."
+        None, help="Region of the Foundry resource, echoed in the report (default: AZURE_LOCATION)."
     ),
 ) -> None:
     """Ask the Foundry deployment for a JSON echo via Agent Framework and validate it."""
@@ -57,7 +57,11 @@ def foundry(
     )
     result = run_or_exit(
         "foundry",
-        run_foundry_smoke(env["FOUNDRY_PROJECT_ENDPOINT"], env["FOUNDRY_MODEL_DEPLOYMENT"], region=region),
+        run_foundry_smoke(
+            env["FOUNDRY_PROJECT_ENDPOINT"],
+            env["FOUNDRY_MODEL_DEPLOYMENT"],
+            region=region or settings.azure_location,
+        ),
     )
     typer.echo(f"deployment: {result.deployment}")
     typer.echo(f"model: {result.model or 'unknown'}")
@@ -70,12 +74,16 @@ def foundry(
 
 @app.command()
 def eventhubs() -> None:
-    """Publish one envelope to Event Hubs and read it back through consumer group `live-state`."""
+    """Publish one envelope to Event Hubs and read it back through EVENTHUBS_CONSUMER_GROUP (`live-state`)."""
     settings = load_settings()
     env = require({"EVENTHUBS_FULLY_QUALIFIED_NAMESPACE": settings.eventhubs_fully_qualified_namespace})
     result = run_or_exit(
         "eventhubs",
-        run_eventhubs_smoke(env["EVENTHUBS_FULLY_QUALIFIED_NAMESPACE"], settings.eventhubs_name),
+        run_eventhubs_smoke(
+            env["EVENTHUBS_FULLY_QUALIFIED_NAMESPACE"],
+            settings.eventhubs_name,
+            consumer_group=settings.eventhubs_consumer_group,
+        ),
     )
     typer.echo(f"namespace: {result.namespace}")
     typer.echo(f"hub: {result.hub}")
