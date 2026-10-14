@@ -1,14 +1,14 @@
 import asyncio
 import json
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from support.fake_eventhubs import FakeHub
 
 from tactistream.contracts import FeedEnvelope
 from tactistream.transport.bus import FeedBus
-from tactistream.transport.eventhubs_bus import EventHubsBus
+from tactistream.transport.eventhubs_bus import EventHubsBus, enqueued_since_subscribe
 
 NAMESPACE = "tactistream.servicebus.windows.net"
 HUB = "tactistream-feed"
@@ -103,6 +103,24 @@ async def test_starting_position_is_configurable(skeleton: list[FeedEnvelope]) -
     consumer = await hub.receiving("live-state")
     assert consumer.starting_position == since
     await bus.close()
+
+
+async def test_callable_starting_position_is_resolved_at_subscribe() -> None:
+    hub = FakeHub()
+    positions = iter([datetime(2026, 10, 14, 9, tzinfo=UTC), datetime(2026, 10, 14, 10, tzinfo=UTC)])
+    bus = make_bus(hub, starting_position=lambda: next(positions))
+    bus.subscribe("live-state")
+    bus.subscribe("fabric")
+    assert (await hub.receiving("live-state")).starting_position == datetime(2026, 10, 14, 9, tzinfo=UTC)
+    assert (await hub.receiving("fabric")).starting_position == datetime(2026, 10, 14, 10, tzinfo=UTC)
+    await bus.close()
+
+
+def test_enqueued_since_subscribe_backs_off_by_the_margin() -> None:
+    position = enqueued_since_subscribe(timedelta(seconds=5))
+    before = datetime.now(UTC)
+    resolved = position()
+    assert before - timedelta(seconds=5) <= resolved <= datetime.now(UTC) - timedelta(seconds=5)
 
 
 async def test_undecodable_bodies_are_skipped(skeleton: list[FeedEnvelope]) -> None:
