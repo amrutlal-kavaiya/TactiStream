@@ -46,6 +46,7 @@ class FakeConsumer:
         self.stopped = asyncio.Event()
         self.closed = False
         self.cancelled = False
+        self.ended = asyncio.Event()
 
     async def receive(
         self,
@@ -69,6 +70,8 @@ class FakeConsumer:
         except asyncio.CancelledError:
             self.cancelled = True
             raise
+        finally:
+            self.ended.set()
 
     async def fail(self, error: Exception) -> None:
         if self.on_error is not None:

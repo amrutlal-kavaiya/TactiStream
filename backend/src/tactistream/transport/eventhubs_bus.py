@@ -12,6 +12,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
 from azure.eventhub import EventData
+from azure.eventhub.exceptions import ConnectionLostError, OperationTimeoutError
 from pydantic import ValidationError
 
 from tactistream.contracts import FeedEnvelope
@@ -19,7 +20,18 @@ from tactistream.contracts import FeedEnvelope
 logger = logging.getLogger(__name__)
 
 OnEvent = Callable[[Any, EventData | None], Awaitable[None]]
+OnError = Callable[[Any, Exception], Awaitable[None]]
 StartingPosition = str | datetime
+
+# The SDK maps an AMQP link detach to ConnectionLostError even when the entity is missing or access is denied.
+_FATAL_CONDITIONS = frozenset({"not-found", "unauthorized-access"})
+
+
+def is_transient(error: Exception) -> bool:
+    """Connection drops and timeouts are retried by the SDK; auth, missing-entity and other errors are not."""
+    return isinstance(error, ConnectionLostError | OperationTimeoutError) and (
+        getattr(error, "error", None) not in _FATAL_CONDITIONS
+    )
 
 
 def enqueued_since_subscribe(margin: timedelta = timedelta(seconds=5)) -> Callable[[], datetime]:
@@ -35,7 +47,11 @@ class EventHubsProducer(Protocol):
 
 class EventHubsConsumer(Protocol):
     async def receive(
-        self, on_event: OnEvent, *, starting_position: StartingPosition | None = None
+        self,
+        on_event: OnEvent,
+        *,
+        starting_position: StartingPosition | None = None,
+        on_error: OnError | None = None,
     ) -> None: ...
 
     async def close(self) -> None: ...
@@ -94,6 +110,10 @@ class EventHubsBus:
     The service resolves `"@latest"` when the receive link opens, so envelopes published between `subscribe()`
     and link open are not seen; `enqueued_since_subscribe()` closes that gap. A callable is resolved per group
     at subscribe time.
+
+    The SDK's `receive()` does not raise for service errors; it reports them to `on_error` and keeps retrying.
+    The first non-transient error, or more than `max_transient_errors` transient ones in a row, stops the
+    group's receiver and is re-raised from every iterator of that group.
     """
 
     def __init__(
@@ -104,12 +124,14 @@ class EventHubsBus:
         client_factory: EventHubsClientFactory | None = None,
         *,
         starting_position: StartingPosition | Callable[[], StartingPosition] = "@latest",
+        max_transient_errors: int = 3,
     ) -> None:
         self._namespace = namespace
         self._hub = hub
         self._credential = credential
         self._factory = client_factory or AzureEventHubsClients()
         self._starting_position = starting_position
+        self._max_transient_errors = max_transient_errors
         self._producer: EventHubsProducer | None = None
         self._groups: dict[str, _Group] = {}
         self._closed = False
@@ -152,10 +174,37 @@ class EventHubsBus:
         position = self._starting_position
         if callable(position):
             position = position()
+        transient_errors = 0
+        failed = False
+
+        def fail(error: Exception) -> None:
+            nonlocal failed
+            if failed:
+                return
+            failed = True
+            logger.error("consumer group %s failed: %s: %s", consumer_group, type(error).__name__, error)
+            queue.put_nowait(_Failure(error))
+            self._groups[consumer_group].task.cancel()
+
+        async def on_error(_context: Any, error: Exception) -> None:
+            nonlocal transient_errors
+            if is_transient(error) and transient_errors < self._max_transient_errors:
+                transient_errors += 1
+                logger.warning(
+                    "consumer group %s transient error %d/%d: %s",
+                    consumer_group,
+                    transient_errors,
+                    self._max_transient_errors,
+                    error,
+                )
+                return
+            fail(error)
 
         async def on_event(_context: Any, event: EventData | None) -> None:
+            nonlocal transient_errors
             if event is None:
                 return
+            transient_errors = 0
             try:
                 envelope = FeedEnvelope.model_validate_json(event.body_as_str())
             except (ValidationError, TypeError, UnicodeDecodeError) as exc:
@@ -165,10 +214,9 @@ class EventHubsBus:
 
         async def receive() -> None:
             try:
-                await consumer.receive(on_event, starting_position=position)
+                await consumer.receive(on_event, starting_position=position, on_error=on_error)
             except Exception as exc:
-                logger.error("receive failed for consumer group %s: %s", consumer_group, exc)
-                queue.put_nowait(_Failure(exc))
+                fail(exc)
             else:
                 queue.put_nowait(_CLOSED)
 

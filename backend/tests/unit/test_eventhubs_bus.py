@@ -157,6 +157,7 @@ async def test_receive_failure_surfaces_from_the_iterator() -> None:
         await asyncio.wait_for(anext(live), timeout=1)
     (consumer,) = hub.consumers["live-state"]
     assert consumer.on_error is not None
+    await asyncio.wait_for(consumer.ended.wait(), timeout=1)
     assert consumer.cancelled
     with pytest.raises(AuthenticationError):
         await asyncio.wait_for(anext(bus.subscribe("live-state")), timeout=1)
@@ -206,6 +207,7 @@ async def test_transient_errors_are_tolerated_up_to_the_bound(skeleton: list[Fee
         await consumer.fail(ConnectionLostError("link detached"))
     with pytest.raises(ConnectionLostError):
         await asyncio.wait_for(anext(live), timeout=1)
+    await asyncio.wait_for(consumer.ended.wait(), timeout=1)
     assert consumer.cancelled
     await bus.close()
 

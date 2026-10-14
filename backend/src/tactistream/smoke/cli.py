@@ -37,7 +37,7 @@ def run_or_exit[T](name: str, coroutine: Coroutine[Any, Any, T]) -> T:
     try:
         return asyncio.run(coroutine)
     except Exception as exc:
-        typer.echo(f"{name} smoke failed: {exc}", err=True)
+        typer.echo(f"{name} smoke failed: {type(exc).__name__}: {exc}", err=True)
         raise typer.Exit(1) from None
 
 
