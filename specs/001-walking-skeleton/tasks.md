@@ -31,7 +31,7 @@ description: "Task list for 001 walking skeleton"
 - [x] T008 [P] Implement `backend/src/tactistream/contracts/event.py` and `tracking.py` incl. model validators: pass requires `end_m`+`duration_ms`; complete pass requires `recipient_id`; visible ⇔ `pos_m`
 - [x] T009 [P] Implement `backend/src/tactistream/contracts/metric.py`, `moment.py`, `claim.py` incl. validator ok ⇔ value+unit; `AnalystOutput.claims` max 2
 - [x] T010 [P] Implement `backend/src/tactistream/contracts/insight.py`, `recap.py`, `envelope.py` (payload parsed into typed model by `kind`; `insight`/`agent_trace`/`latency` kept typed where defined), `ws.py` (`ServerMessage`, `Snapshot`, `NarrativeStatus`, `InsightRevoked`, `ClientMessage` discriminated union on `type`); export all from `contracts/__init__.py`. Run T005 → green
-- [ ] T011 Add `frontend/scripts/gen-contracts.mjs` compiling every schema in `../contracts/schemas` into one `frontend/src/contracts/generated.ts` (banner "GENERATED — do not edit"), wire `npm run contracts:gen` and `make contracts` (backend contract tests + generation + `git diff --exit-code frontend/src/contracts/generated.ts`); commit the generated file
+- [x] T011 Add `frontend/scripts/gen-contracts.mjs` compiling every schema in `../contracts/schemas` into one `frontend/src/contracts/generated.ts` (banner "GENERATED — do not edit"), wire `npm run contracts:gen` and `make contracts` (backend contract tests + generation + `git diff --exit-code frontend/src/contracts/generated.ts`); commit the generated file
 
 ### Runtime primitives
 
