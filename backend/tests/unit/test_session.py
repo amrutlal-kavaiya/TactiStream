@@ -1,6 +1,7 @@
 import asyncio
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
 
@@ -295,4 +296,14 @@ async def test_concurrent_create_never_gets_a_session_closed_by_a_failed_start()
     )
     assert [type(r) for r in results] == [SessionStartError, SessionStartError]
     assert registry.get("demo-blue-amber-001") is None
+    await registry.aclose()
+
+
+async def test_missing_fixture_is_an_unavailable_scenario(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("TACTISTREAM_DATA_DIR", str(tmp_path))
+    registry = SessionRegistry(InMemoryBus(), FakeClock(), LatencyRecorder())
+    with pytest.raises(UnknownScenarioError, match="skeleton"):
+        await registry.create("skeleton")
     await registry.aclose()

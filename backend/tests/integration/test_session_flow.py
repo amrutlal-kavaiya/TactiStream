@@ -184,3 +184,14 @@ async def test_session_start_timeout_is_503_with_error_envelope(monkeypatch: pyt
         assert set(response.json()) == {"error", "detail"}
         missing = await env.client.post(f"/api/matches/{MATCH}/control", json={"action": "play"})
         assert missing.status_code == 404
+
+
+async def test_missing_fixture_is_422_with_error_envelope(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("TACTISTREAM_DATA_DIR", str(tmp_path))
+    async with app_env() as env:
+        response = await env.client.post("/api/sessions", json={"scenario": "skeleton"})
+        assert response.status_code == 422
+        assert response.json()["error"] == "invalid_scenario"
+        assert set(response.json()) == {"error", "detail"}
