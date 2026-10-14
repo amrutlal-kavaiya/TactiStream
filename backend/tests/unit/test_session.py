@@ -276,3 +276,23 @@ async def test_session_whose_metadata_never_arrives_is_not_registered() -> None:
         await registry.create("skeleton")
     assert registry.get("demo-blue-amber-001") is None
     await registry.aclose()
+
+
+async def test_concurrent_creates_share_one_start(world: World) -> None:
+    async def create_ready() -> tuple[MatchSession, bool]:
+        session = await world.registry.create("skeleton")
+        return session, session.state.metadata is not None
+
+    (first, first_ready), (second, second_ready) = await asyncio.gather(create_ready(), create_ready())
+    assert first is second
+    assert first_ready and second_ready
+
+
+async def test_concurrent_create_never_gets_a_session_closed_by_a_failed_start() -> None:
+    registry = SessionRegistry(SilentBus(), FakeClock(), LatencyRecorder(), ready_timeout_s=0.05)
+    results = await asyncio.gather(
+        registry.create("skeleton"), registry.create("skeleton"), return_exceptions=True
+    )
+    assert [type(r) for r in results] == [SessionStartError, SessionStartError]
+    assert registry.get("demo-blue-amber-001") is None
+    await registry.aclose()
