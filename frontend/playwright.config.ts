@@ -18,7 +18,8 @@ export default defineConfig({
     command: 'npm run build && cd ../backend && uv run tactistream-api',
     env: { TACTISTREAM_STATIC_DIR: resolve(import.meta.dirname, 'dist') },
     url: `${baseURL}/healthz`,
-    reuseExistingServer: !process.env.CI,
+    // Never reuse a server on :8000: it may be serving a stale dist or a dev backend without one.
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 })

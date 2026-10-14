@@ -36,7 +36,7 @@ describe('design tokens', () => {
     ['color-text-muted', 'color-surface'],
     ['color-text-muted', 'color-surface-raised'],
     ['color-link', 'color-surface-raised'],
-    ['color-danger', 'color-surface'],
+    ['color-danger', 'color-surface-raised'],
     ['color-on-accent', 'color-blue'],
     ['color-on-accent', 'color-amber'],
   ])('%s on %s has contrast of at least 4.5:1', (fg, bg) => {
