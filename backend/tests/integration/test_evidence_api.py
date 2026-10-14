@@ -1,6 +1,8 @@
 from support.app_env import MATCH, app_env
 
 from tactistream.contracts import validate
+from tactistream.transport.fixtures import load_fixture, skeleton_fixture_path
+from tactistream.transport.memory_bus import InMemoryBus
 
 EVIDENCE = f"/api/matches/{MATCH}/evidence"
 
@@ -43,15 +45,22 @@ async def test_unknown_evidence_is_404() -> None:
         assert response.json()["error"] == "evidence_not_found"
 
 
-async def test_evidence_is_not_resolvable_before_its_session_time() -> None:
-    async with app_env() as env:
+async def test_ingested_evidence_is_not_resolvable_before_its_session_time() -> None:
+    bus = InMemoryBus()
+    async with app_env(bus) as env:
         await env.start_session()
         await env.control("play")
-        await env.clock.advance(3500)
+        await env.clock.advance(1000)
+        early_event = next(r for r in load_fixture(skeleton_fixture_path()) if r.record_id == "evt-0043")
+        await bus.publish(early_event)
+        await env.clock.advance(0)
+        session = env.app.state.registry.get(MATCH)
+        assert session.state.envelope("event", "evt-0043") is not None
+
         early = await env.client.get(f"{EVIDENCE}/evt-0043")
         assert (early.status_code, early.json()["error"]) == (404, "evidence_not_found")
 
-        await env.clock.advance(400)
+        await env.clock.advance(2900)
         assert (await env.client.get(f"{EVIDENCE}/evt-0043")).status_code == 200
 
 
