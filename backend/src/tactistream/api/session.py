@@ -53,6 +53,10 @@ class UnknownScenarioError(ValueError):
     pass
 
 
+class SessionStartError(RuntimeError):
+    pass
+
+
 @cache
 def _scenario_records(path: Path) -> tuple[FeedEnvelope, ...]:
     return tuple(load_fixture(path))
@@ -89,10 +93,15 @@ class MatchSession:
         seed = self.state.metadata.source.seed if self.state.metadata else None
         return SnapshotPlayback(state=self.replayer.state.value, speed=self.replayer.speed, seed=seed or 0)
 
-    async def start(self) -> None:
+    async def start(self, timeout_s: float) -> None:
         """Publish the metadata and wait until it has been ingested, so snapshots are always possible."""
         await self.reset()
-        await asyncio.wait_for(self._ready.wait(), timeout=READY_TIMEOUT_S)
+        try:
+            await asyncio.wait_for(self._ready.wait(), timeout=timeout_s)
+        except TimeoutError as exc:
+            raise SessionStartError(
+                f"match {self.match_id} metadata not ingested within {timeout_s}s"
+            ) from exc
 
     async def play(self) -> None:
         await self.replayer.play()
@@ -222,8 +231,10 @@ class SessionRegistry:
         clock: Clock,
         latency: LatencyRecorder,
         wall_ms: WallClock = wall_clock_ms,
+        ready_timeout_s: float | None = None,
     ) -> None:
         self._bus = bus
+        self._ready_timeout_s = ready_timeout_s
         self._clock = clock
         self._latency = latency
         self._wall_ms = wall_ms
@@ -247,7 +258,12 @@ class SessionRegistry:
             self._consumer = asyncio.create_task(self._consume(self._bus.subscribe(LIVE_STATE_GROUP)))
         session = MatchSession(records, self._bus, self._clock, self._wall_ms, self._latency)
         self._sessions[session.match_id] = session
-        await session.start()
+        try:
+            await session.start(self._ready_timeout_s or READY_TIMEOUT_S)
+        except SessionStartError:
+            del self._sessions[session.match_id]
+            await session.aclose()
+            raise
         return session
 
     async def aclose(self) -> None:

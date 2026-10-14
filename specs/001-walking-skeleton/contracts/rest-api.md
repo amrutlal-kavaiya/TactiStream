@@ -6,7 +6,7 @@ Endpoints added by later features are listed with their owning feature so the AP
 | Method & path | Feature | Request | 200 response | Errors |
 |---|---|---|---|---|
 | `GET /healthz` | 001 (004 adds `demo_fixtures`) | — | `{"status":"ok","version":"0.1.0","bus":"memory\|eventhubs","agents":"off\|scripted\|foundry","demo_fixtures":false}` | — |
-| `POST /api/sessions` | 001 (002 adds seed/scenario/variant; 009 adds capacity cap) | `{"scenario":"skeleton"}` or `{"scenario":"space_creation","seed":42,"variant":"A"}` | `{"session_id":"s-…","match_id":"…","ws_path":"/ws/matches/{match_id}"}` | 422 `invalid_scenario`, 503 `capacity_reached` |
+| `POST /api/sessions` | 001 (002 adds seed/scenario/variant; 009 adds capacity cap) | `{"scenario":"skeleton"}` or `{"scenario":"space_creation","seed":42,"variant":"A"}` | `{"session_id":"s-…","match_id":"…","ws_path":"/ws/matches/{match_id}"}` | 422 `invalid_scenario`, 503 `session_start_timeout` (metadata not ingested in time; session discarded), 503 `capacity_reached` |
 | `POST /api/matches/{match_id}/control` | 001 (002 adds `seek`, `speed`) | `{"action":"play"\|"pause"\|"reset"}` · `{"action":"speed","speed":1.0}` · `{"action":"seek","to_ms":12000}` | `{"playback":{"state":"playing","speed":1.0,"seed":42},"session_clock_ms":0}` | 404 `match_not_found`, 422 `invalid_action` |
 | `GET /api/matches/{match_id}/evidence/{evidence_id}?language=en\|hi` | 001 (005 adds `presentation`) | — | `{"evidence_id":"evt-0042","kind":"event"\|"frame"\|"metric","record":{…contract record…}}`; metric records add `presentation` {definition, limitation, unit_label} | 404 `evidence_not_found` |
 | `GET /api/matches/{match_id}/snapshot?as_of_ms=` | 003 | — | `ws_message.schema.json#/$defs/Snapshot` | 404 |

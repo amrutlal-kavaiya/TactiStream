@@ -8,7 +8,7 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 from tactistream.api.errors import ApiError
-from tactistream.api.session import MatchSession, SessionRegistry, UnknownScenarioError
+from tactistream.api.session import MatchSession, SessionRegistry, SessionStartError, UnknownScenarioError
 
 router = APIRouter()
 
@@ -39,6 +39,8 @@ async def create_session(body: CreateSessionRequest, request: Request) -> dict[s
         session = await registry_of(request).create(body.scenario)
     except UnknownScenarioError as exc:
         raise ApiError(422, "invalid_scenario", str(exc)) from exc
+    except SessionStartError as exc:
+        raise ApiError(503, "session_start_timeout", str(exc)) from exc
     return {
         "session_id": session.session_id,
         "match_id": session.match_id,
