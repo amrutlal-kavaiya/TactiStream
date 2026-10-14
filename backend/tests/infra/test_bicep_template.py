@@ -104,6 +104,8 @@ def flatten(template: dict[str, Any], values: dict[str, Any] | None = None) -> I
     scope = _scope(template, values or {})
     for body in _resources(template):
         resource = Resource(body, scope)
+        if body.get("existing"):
+            continue
         if resource.type == "Microsoft.Resources/deployments":
             yield from flatten(body["properties"]["template"], _module_values(body, resource))
         else:
@@ -217,7 +219,11 @@ def test_container_app_uses_managed_identity_for_registry() -> None:
 
 
 def test_container_app_has_azd_service_tag() -> None:
-    assert container_app()["tags"]["azd-service-name"] == "web"
+    tags = container_app()["tags"]
+    if isinstance(tags, str):
+        assert "'azd-service-name', 'web'" in tags, tags
+    else:
+        assert tags["azd-service-name"] == "web"
 
 
 def test_event_hub_partitions_and_retention() -> None:
@@ -304,6 +310,14 @@ def test_outputs_for_azd_and_runtime() -> None:
         "MANAGED_IDENTITY_CLIENT_ID",
     }
     assert not any("connection" in name.lower() for name in outputs)
+
+
+def test_parameters_file_covers_required_params_with_azd_substitutions() -> None:
+    declared = compile_main().template["parameters"]
+    supplied = json.loads((REPO / "infra" / "main.parameters.json").read_text(encoding="utf-8"))["parameters"]
+    assert set(supplied) <= set(declared)
+    assert {name for name, p in declared.items() if "defaultValue" not in p} <= set(supplied)
+    assert all(re.fullmatch(r"\$\{[A-Z_]+=?\}", entry["value"]) for entry in supplied.values()), supplied
 
 
 def test_no_module_outputs_a_connection_string() -> None:
