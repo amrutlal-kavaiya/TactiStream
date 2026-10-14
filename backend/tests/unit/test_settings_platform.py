@@ -55,7 +55,9 @@ def test_platform_env_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.parametrize(("value", "expected"), [("off", False), ("on", True), ("false", False)])
-def test_analytics_publish_accepts_on_off(monkeypatch: pytest.MonkeyPatch, value: str, expected: bool) -> None:
+def test_analytics_publish_accepts_on_off(
+    monkeypatch: pytest.MonkeyPatch, value: str, expected: bool
+) -> None:
     monkeypatch.setenv("TACTISTREAM_ANALYTICS_PUBLISH", value)
     assert Settings(_env_file=None).analytics_publish is expected
 

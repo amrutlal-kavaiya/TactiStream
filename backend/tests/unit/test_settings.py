@@ -54,6 +54,10 @@ def test_every_env_example_name_is_read(monkeypatch: pytest.MonkeyPatch) -> None
         "TACTISTREAM_BUS": "eventhubs",
         "TACTISTREAM_AGENTS": "foundry",
         "TACTISTREAM_NARRATIVE_DEADLINE_MS": "1",
+        "TACTISTREAM_ARTIFACT_STORE": "blob",
+        "TACTISTREAM_ANALYTICS_PUBLISH": "True",
+        "TACTISTREAM_HISTORY": "eventhouse",
+        "TACTISTREAM_HISTORY_TIMEOUT_MS": "1234",
     }
     for name in example_names():
         monkeypatch.setenv(name, values.get(name, f"v-{name.lower()}"))
