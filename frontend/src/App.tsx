@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { ApiError, control, type ControlAction, createSession, getEvidence, wsUrl } from './api/client'
+import {
+  ApiError,
+  control,
+  type ControlAction,
+  createSession,
+  getEvidence,
+  type SessionInfo,
+  wsUrl,
+} from './api/client'
 import { MatchSocket } from './api/socket'
 import { EventList } from './components/EventList'
 import { EvidenceDrawer } from './components/EvidenceDrawer'
@@ -52,10 +60,15 @@ export default function App() {
     setErrorKey(null)
     setEvidenceId(null)
     try {
-      const session = await createSession('skeleton')
+      let session: SessionInfo
+      try {
+        session = await createSession('skeleton')
+      } catch (error) {
+        setErrorKey(startErrorKey(error))
+        return
+      }
       socketRef.current?.close()
-      const store = useMatchStore.getState()
-      store.startSession(session.match_id)
+      useMatchStore.getState().startSession(session.match_id)
       const socket = new MatchSocket({
         url: wsUrl(session.ws_path),
         onMessage: (message) => {
@@ -65,9 +78,11 @@ export default function App() {
       })
       socketRef.current = socket
       socket.connect()
-      await control(session.match_id, 'play')
-    } catch (error) {
-      setErrorKey(startErrorKey(error))
+      try {
+        await control(session.match_id, 'play')
+      } catch {
+        setErrorKey('errorPlayNotStarted')
+      }
     } finally {
       setStarting(false)
     }

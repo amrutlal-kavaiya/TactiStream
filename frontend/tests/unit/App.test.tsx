@@ -174,6 +174,18 @@ describe('App', () => {
     expect(MockWebSocket.instances).toHaveLength(0)
   })
 
+  it('keeps the session and asks for Play when the first play command fails', async () => {
+    routes[controlPath] = json(503, { error: 'unexpected', detail: 'x' })
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Start demo match' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent("Playback didn't start — press Play.")
+    expect(MockWebSocket.instances).toHaveLength(1)
+    expect(MockWebSocket.latest().readyState).not.toBe(3)
+    expect(screen.getByRole('button', { name: 'Play' })).toBeEnabled()
+  })
+
   it('switches the card variant and chrome strings to Hindi', async () => {
     const { user, ws } = await startMatch()
     deliver(ws, snapshot(5), insightMessage(7, insight('ins-0042')))

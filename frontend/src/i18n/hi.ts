@@ -45,5 +45,6 @@ export const hi: Record<MessageKey, string> = {
   errorStartTimeout: 'डेमो मैच शुरू होने में बहुत समय लगा। कृपया फिर से कोशिश करें।',
   errorNetwork: 'सर्वर से संपर्क नहीं हो पा रहा है। क्या बैकएंड चल रहा है?',
   errorStart: 'डेमो मैच शुरू नहीं हो सका।',
+  errorPlayNotStarted: 'प्लेबैक शुरू नहीं हुआ — "चलाएँ" दबाएँ।',
   errorControl: 'प्लेबैक आदेश विफल रहा। कृपया फिर से कोशिश करें।',
 }

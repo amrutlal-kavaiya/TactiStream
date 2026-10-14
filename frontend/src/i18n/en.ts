@@ -43,6 +43,7 @@ export const en = {
   errorStartTimeout: 'The demo match took too long to start. Please try again.',
   errorNetwork: 'Cannot reach the server. Is the backend running?',
   errorStart: 'Could not start the demo match.',
+  errorPlayNotStarted: "Playback didn't start — press Play.",
   errorControl: 'The playback command failed. Please try again.',
 }
 
