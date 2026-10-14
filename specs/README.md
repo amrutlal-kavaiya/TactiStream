@@ -168,6 +168,22 @@ def render_claim(template_id: str, slots: Mapping[str, SlotValue], mode: ViewerM
                  *, context: RenderContext | None) -> RenderedText: ...   # context = metadata + metrics for slot resolution
 ```
 
+### Frontend UI (Fluent UI React v9 — constitution 1.2.0)
+
+Design: `docs/superpowers/specs/2026-10-14-fluent-ui-design.md`. All features build UI from these pieces; styling via
+Griffel `makeStyles` + Fluent tokens; app tokens only for team/pitch colours (`--ts-team-blue`, `--ts-team-amber`).
+
+| App component | Fluent building blocks |
+|---|---|
+| `AppShell` | `FluentProvider` (brand theme, dark default, toggle persisted in `localStorage["tactistream.theme"]`) |
+| `TopBar` | `Text`, `Badge` (Synthetic), status dot + label, theme `ToggleButton`; 006 adds mode `TabList` + language `Menu` |
+| `PlaybackControls` | `Toolbar`, `ToolbarButton` + `@fluentui/react-icons`, `Tooltip` |
+| `InsightCard` | `Card`, `CardHeader`; evidence chips are real `Button`s (small, outline) |
+| `EvidenceDrawer` | `OverlayDrawer` (end) + `DrawerHeader`/`DrawerBody`; `Spinner`; `MessageBar` on 404 |
+| `EventList` | `Table size="extra-small"` |
+| Notices | `MessageBar` (`error` / `warning`) |
+| 005 replay overlay, 006 recap, 008 evidence page | same primitives; new controls take Fluent equivalents (`Slider`, `Dialog`, `DataGrid`, `Tab`) |
+
 ### Clocks & coordinates
 
 - `session_clock_ms` (single controlled clock for the synthetic demo), `period_clock_ms`, and
