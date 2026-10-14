@@ -79,9 +79,7 @@ _KICKOFF: Mapping[int, Point] = {
 }
 FORMATION_433: Mapping[FormationPhase, Mapping[int, Point]] = {
     "in_possession": dict(sorted(_IN_POSSESSION.items())),
-    "out_of_possession": {
-        n: (x if n == 1 else x - 10.0, y) for n, (x, y) in sorted(_IN_POSSESSION.items())
-    },
+    "out_of_possession": {n: (x if n == 1 else x - 10.0, y) for n, (x, y) in sorted(_IN_POSSESSION.items())},
     "kickoff": dict(sorted(_KICKOFF.items())),
 }
 

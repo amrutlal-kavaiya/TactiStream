@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass
 from typing import Literal, get_args
 
 from tactistream.contracts import TeamId
+from tactistream.simulator.roster import attack_dir
 
 ScenarioName = Literal[
     "space_creation",
@@ -69,8 +70,7 @@ class VariantSpec:
     @property
     def focus_attack_dir(self) -> Literal[1, -1]:
         """Direction along x the focus team attacks in this variant's period (Blue attacks +x in period 1)."""
-        blue_dir = 1 if self.period == 1 else -1
-        return blue_dir if self.focus_team == "blue" else -blue_dir
+        return attack_dir(self.focus_team, self.period)
 
 
 VARIANTS: Mapping[Variant, VariantSpec] = {

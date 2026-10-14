@@ -17,8 +17,16 @@ from tactistream.simulator.config import (
     ("kwargs", "code", "message"),
     [
         ({"seed": 10000}, "eval_seed_requires_eval_split", "seed 10000 is reserved for split=eval"),
-        ({"seed": 42, "variant": "D"}, "eval_variant_requires_eval_split", "variant D is reserved for split=eval"),
-        ({"seed": 42, "split": "eval", "variant": "D"}, "dev_seed_in_eval_split", "split=eval requires seed >= 10000"),
+        (
+            {"seed": 42, "variant": "D"},
+            "eval_variant_requires_eval_split",
+            "variant D is reserved for split=eval",
+        ),
+        (
+            {"seed": 42, "split": "eval", "variant": "D"},
+            "dev_seed_in_eval_split",
+            "split=eval requires seed >= 10000",
+        ),
         (
             {"seed": 10000, "split": "eval", "variant": "A"},
             "invalid_variant",
@@ -66,7 +74,10 @@ def test_other_match_ids_are_opaque() -> None:
     assert re.fullmatch(r"sim-[0-9a-f]{10}", match_id)
     assert "space" not in match_id
     assert "43" not in match_id
-    assert SimulationConfig(42, "space_creation", "B").match_id != SimulationConfig(42, "space_creation").match_id
+    assert (
+        SimulationConfig(42, "space_creation", "B").match_id
+        != SimulationConfig(42, "space_creation").match_id
+    )
 
 
 def test_canonical_json_is_stable() -> None:
