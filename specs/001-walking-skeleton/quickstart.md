@@ -8,9 +8,19 @@
 
 ```bash
 cp .env.example .env            # defaults: TACTISTREAM_BUS=memory, TACTISTREAM_AGENTS=off
-make install                    # uv sync (backend) + npm ci (frontend) + playwright install chromium
+make install                    # uv sync (backend) + npm ci (frontend) + playwright install --with-deps chromium
 make dev                        # API on :8000, Vite on :5173 (proxy /api and /ws to :8000)
 ```
+
+`playwright install --with-deps` installs Chromium's system libraries through the OS package manager, so on Linux it
+asks for `sudo` (passwordless in Codespaces). uv downloads Python 3.12 itself if it is not installed.
+
+Optional settings (`.env` or the shell):
+
+- `TACTISTREAM_DATA_DIR` — directory holding `fixtures/skeleton.jsonl`; default `<repo>/data`. If the fixture is missing,
+  `POST /api/sessions` returns 422 `invalid_scenario`.
+- `TACTISTREAM_STATIC_DIR` — built frontend the API serves at `/`; default `<repo>/frontend/dist`, mounted only if the
+  directory exists. `make dev` does not need it (Vite serves the UI on :5173); `make e2e` points it at a fresh build.
 
 Open http://localhost:5173 → **Start demo match**. Expected within ~3 s:
 

@@ -115,7 +115,7 @@ description: "Task list for 001 walking skeleton"
 
 ## Phase 6: Polish
 
-- [ ] T054 [P] Update `README.md`: one-paragraph pitch, Synthetic-data disclaimer, quickstart (`make install && make dev`), test commands, link to `specs/README.md` and constitution
+- [x] T054 [P] Update `README.md`: one-paragraph pitch, Synthetic-data disclaimer, quickstart (`make install && make dev`), test commands, link to `specs/README.md` and constitution
 - [ ] T055 [P] Run quickstart.md on a fresh clone (new codespace or `git clone` to /tmp) and fix any gaps
 - [ ] T056 Update `specs/README.md` feature table: mark 001 exit condition met with date
 
