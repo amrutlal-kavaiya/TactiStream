@@ -45,7 +45,9 @@ def test_snapshot_reflects_state_at_head_seq(skeleton: list[FeedEnvelope], pass_
     assert snapshot.latest_frame == state.latest_frame
     assert snapshot.state_version == state.state_version
     assert (snapshot.insights, snapshot.moments) == ([], [])
-    validate("ws_message.schema.json#/$defs/ServerMessage", message.model_dump(mode="json", exclude_none=True))
+    validate(
+        "ws_message.schema.json#/$defs/ServerMessage", message.model_dump(mode="json", exclude_none=True)
+    )
 
 
 async def test_slow_subscriber_is_disconnected_without_blocking_others(pass_event: MatchEvent) -> None:

@@ -1,6 +1,7 @@
 """Shared harness for integration tests: the ASGI app on a FakeClock, an httpx client and WS helpers."""
 
 from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import Any
 
@@ -8,8 +9,8 @@ import httpx
 from fastapi import FastAPI
 from httpx_ws import AsyncWebSocketSession
 from httpx_ws.transport import ASGIWebSocketTransport
-from tactistream.api.app import create_app
 
+from tactistream.api.app import create_app
 from tactistream.contracts import validate
 from tactistream.settings import Settings
 from tactistream.transport.bus import FeedBus
@@ -41,7 +42,9 @@ class Env:
         return body
 
 
-async def make_env(bus: FeedBus | None = None) -> AsyncIterator[Env]:
+@asynccontextmanager
+async def app_env(bus: FeedBus | None = None) -> AsyncIterator[Env]:
+    """Used inside the test body: the WS transport's task group must exit in the task that entered it."""
     clock = FakeClock()
     app = create_app(Settings(_env_file=None), clock=clock, bus=bus or InMemoryBus(), static_dir=None)
     async with (
