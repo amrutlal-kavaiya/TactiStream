@@ -17,7 +17,8 @@ from tactistream.transport.memory_bus import InMemoryBus
 class FakeSocket:
     def __init__(self) -> None:
         self.sent: list[dict[str, Any]] = []
-        self.incoming: asyncio.Queue[str | None] = asyncio.Queue()
+        self.incoming: asyncio.Queue[str | Exception | None] = asyncio.Queue()
+        self.close_code: int | None = None
 
     async def send_text(self, text: str) -> None:
         self.sent.append(json.loads(text))
@@ -26,10 +27,12 @@ class FakeSocket:
         item = await self.incoming.get()
         if item is None:
             raise WebSocketDisconnect()
+        if isinstance(item, Exception):
+            raise item
         return item
 
     async def close(self, code: int = 1000) -> None:
-        pass
+        self.close_code = code
 
 
 @pytest.fixture
@@ -66,4 +69,42 @@ async def test_resume_snapshot_supersedes_messages_still_queued_for_the_client(
     ]
     socket.incoming.put_nowait(None)
     await asyncio.wait_for(connection, timeout=1)
+    assert session.hub.subscriber_count == 0
+
+
+async def open_connection(session: MatchSession) -> tuple[FakeSocket, asyncio.Task[None]]:
+    socket = FakeSocket()
+    task = asyncio.create_task(MatchConnection(socket, session, FakeClock()).run())
+    await settle()
+    return socket, task
+
+
+async def test_server_shutdown_closes_with_going_away(session: MatchSession) -> None:
+    socket, task = await open_connection(session)
+    session.hub.close()
+    await asyncio.wait_for(task, timeout=1)
+    assert socket.close_code == 1001
+
+
+async def test_overflowing_client_is_closed_with_try_again_later(
+    session: MatchSession, pass_event: MatchEvent
+) -> None:
+    socket, task = await open_connection(session)
+    for _ in range(1001):
+        session.hub.broadcast("event", pass_event)
+    await asyncio.wait_for(task, timeout=1)
+    assert socket.close_code == 1013
+
+
+async def test_receiver_failure_is_logged_and_closes_with_internal_error(
+    session: MatchSession, caplog: pytest.LogCaptureFixture
+) -> None:
+    socket, task = await open_connection(session)
+    socket.incoming.put_nowait(RuntimeError("boom"))
+    await asyncio.wait_for(task, timeout=1)
+    assert socket.close_code == 1011
+    errors = [r for r in caplog.records if r.levelname == "ERROR"]
+    assert errors
+    assert errors[0].exc_info is not None
+    assert "boom" in str(errors[0].exc_info[1])
     assert session.hub.subscriber_count == 0
