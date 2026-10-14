@@ -5,6 +5,7 @@ from typing import Any
 
 import pytest
 from fastapi import WebSocketDisconnect
+from starlette.websockets import WebSocketDisconnected
 
 from tactistream.api.session import MatchSession, SessionRegistry
 from tactistream.api.ws import MatchConnection
@@ -19,8 +20,11 @@ class FakeSocket:
         self.sent: list[dict[str, Any]] = []
         self.incoming: asyncio.Queue[str | Exception | None] = asyncio.Queue()
         self.close_code: int | None = None
+        self.send_error: Exception | None = None
 
     async def send_text(self, text: str) -> None:
+        if self.send_error is not None:
+            raise self.send_error
         self.sent.append(json.loads(text))
 
     async def receive_text(self) -> str:
@@ -107,4 +111,24 @@ async def test_receiver_failure_is_logged_and_closes_with_internal_error(
     assert errors
     assert errors[0].exc_info is not None
     assert "boom" in str(errors[0].exc_info[1])
+    assert session.hub.subscriber_count == 0
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        WebSocketDisconnect(code=1006),
+        WebSocketDisconnected('Cannot call "send" once a close message has been sent.'),
+    ],
+    ids=["disconnect", "already-closed"],
+)
+async def test_client_gone_mid_send_is_a_normal_disconnect(
+    session: MatchSession, pass_event: MatchEvent, caplog: pytest.LogCaptureFixture, error: Exception
+) -> None:
+    socket, task = await open_connection(session)
+    socket.send_error = error
+    session.hub.broadcast("event", pass_event)
+    await asyncio.wait_for(task, timeout=1)
+    assert socket.close_code is None
+    assert [r for r in caplog.records if r.levelname == "ERROR"] == []
     assert session.hub.subscriber_count == 0
