@@ -143,3 +143,37 @@ def make_output(*, pass_speed_mps: float = 12.5) -> Records:
 def rebuild_frames(records: Records) -> Records:
     records.frames = frames_from(records.positions, records.ball)
     return records
+
+
+def make_simulation_output(**options: Any) -> Any:
+    """The factory records wrapped as a `SimulationOutput` with a one-segment manifest."""
+    from tactistream.simulator.engine import SimulationOutput
+    from tactistream.simulator.manifest import GenerationManifest, SegmentLabel
+
+    r = make_output(**options)
+    config = SimulationConfig(42, "space_creation")
+    label = SegmentLabel(
+        index=0,
+        scenario="space_creation",
+        variant="A",
+        start_ms=0,
+        end_ms=2000,
+        positive=True,
+        expected_pattern="space_creation",
+        negative_of=None,
+        key_players={"passer": "blue-08"},
+        key_event_ids={"forward_pass": "evt-0003"},
+        intended_explanation="factory",
+    )
+    manifest = GenerationManifest(
+        manifest_version="1",
+        match_id=MATCH_ID,
+        config=config,
+        segments=(label,),
+        tracking_gaps=(),
+        feed_sha256="0" * 64,
+        event_count=len(r.events),
+        frame_count=len(r.frames),
+        duration_ms=2000,
+    )
+    return SimulationOutput(config, r.metadata, tuple(r.events), tuple(r.frames), manifest)
