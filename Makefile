@@ -32,7 +32,9 @@ lint:
 	cd $(FRONTEND) && npm run lint && npm run typecheck
 
 contracts:
-	@echo "contracts: wired in T011"
+	cd $(BACKEND) && uv run pytest tests/contract -q
+	cd $(FRONTEND) && npm run contracts:gen
+	git diff --exit-code -- $(FRONTEND)/src/contracts/generated.ts
 
 smoke:
 	cd $(BACKEND) && uv run tactistream-smoke foundry
