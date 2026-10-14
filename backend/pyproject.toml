@@ -22,6 +22,7 @@ dependencies = [
 [project.scripts]
 tactistream-api = "tactistream.api.app:main"
 tactistream-smoke = "tactistream.smoke.cli:app"
+tactistream-sim = "tactistream.simulator.cli:app"
 
 [dependency-groups]
 dev = [
@@ -31,6 +32,7 @@ dev = [
     "ruff",
     "mypy",
     "httpx-ws>=0.9.0",
+    "hypothesis>=6.169.1",
 ]
 
 [build-system]
@@ -67,7 +69,8 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 pythonpath = ["tests"]
-addopts = "-m 'not live' --import-mode=importlib"
+addopts = "-m 'not live and not slow' --import-mode=importlib"
 markers = [
     "live: tests that call real Azure services (excluded by default; run with -m live)",
+    "slow: long-running matrices and performance runs (excluded by default; run with -m slow)",
 ]

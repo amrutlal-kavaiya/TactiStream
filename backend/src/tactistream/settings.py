@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     narrative_deadline_ms: int = Field(
         default=8000, gt=0, validation_alias="TACTISTREAM_NARRATIVE_DEADLINE_MS"
     )
+    max_sessions: int = Field(default=8, gt=0, validation_alias="TACTISTREAM_MAX_SESSIONS")
     data_dir: Path = Field(default=_REPO_ROOT / "data", validation_alias="TACTISTREAM_DATA_DIR")
     static_dir: Path | None = Field(
         default=_REPO_ROOT / "frontend" / "dist", validation_alias="TACTISTREAM_STATIC_DIR"

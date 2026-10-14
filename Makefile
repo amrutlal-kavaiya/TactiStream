@@ -4,10 +4,10 @@ SHELL := /bin/bash
 BACKEND := backend
 FRONTEND := frontend
 
-.PHONY: help install dev test e2e lint contracts smoke
+.PHONY: help install dev test e2e lint contracts smoke sim-hero
 
 help:
-	@echo "Targets: install dev test e2e lint contracts smoke"
+	@echo "Targets: install dev test e2e lint contracts smoke sim-hero"
 
 install:
 	cd $(BACKEND) && uv sync
@@ -39,3 +39,6 @@ contracts:
 smoke:
 	cd $(BACKEND) && uv run tactistream-smoke foundry
 	cd $(BACKEND) && uv run tactistream-smoke eventhubs
+
+sim-hero:
+	cd $(BACKEND) && uv run tactistream-sim generate --scenario space_creation --seed 42 --variant A --split dev --out ../data/generated/hero --force
