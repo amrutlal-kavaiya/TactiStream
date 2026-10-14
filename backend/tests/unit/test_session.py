@@ -243,3 +243,23 @@ async def test_backward_or_zero_progress_pass_gets_no_card(
     assert summary(messages) == ["event:evt-0042", "metric"]
     metric = messages[1].payload
     assert getattr(metric, "value", None) == progress
+
+
+async def test_pass_without_outcome_gets_an_attempted_card(
+    world: World, skeleton: list[FeedEnvelope]
+) -> None:
+    messages = await published_alone(world, pass_variant(skeleton, outcome=None, recipient_id=None))
+    assert summary(messages) == ["event:evt-0042", "metric", "insight"]
+    bundle = messages[2].payload
+    assert isinstance(bundle, InsightBundle)
+    assert bundle.variants[0].body == "Blue 8 attempted a forward pass."
+
+
+async def test_backward_pass_without_outcome_gets_no_card(world: World, skeleton: list[FeedEnvelope]) -> None:
+    variant = pass_variant(skeleton, outcome=None, recipient_id=None, end_m=(50.0, 28.0))
+    assert summary(await published_alone(world, variant)) == ["event:evt-0042", "metric"]
+
+
+async def test_incomplete_pass_gets_no_card(world: World, skeleton: list[FeedEnvelope]) -> None:
+    variant = pass_variant(skeleton, outcome="incomplete")
+    assert summary(await published_alone(world, variant)) == ["event:evt-0042"]

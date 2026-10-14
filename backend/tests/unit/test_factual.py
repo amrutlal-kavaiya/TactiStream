@@ -88,3 +88,32 @@ def test_non_positive_progress_is_rejected(
     metric = compute_forward_progress(backward, metadata, state_version=12)
     with pytest.raises(ValueError, match="forward progress"):
         build_fact_bundle(backward, metric, metadata, state_version=12, trace_id=TRACE, now_session_ms=3000)
+
+
+def attempted(pass_event: MatchEvent) -> MatchEvent:
+    return pass_event.model_copy(update={"outcome": None, "recipient_id": None})
+
+
+def test_attempted_pass_gets_an_attempted_card_without_numbers(
+    pass_event: MatchEvent, metadata: MatchMetadata
+) -> None:
+    event = attempted(pass_event)
+    metric = compute_forward_progress(event, metadata, state_version=12)
+    bundle = build_fact_bundle(event, metric, metadata, state_version=12, trace_id=TRACE, now_session_ms=3000)
+
+    fan_en = bundle.variants[0]
+    assert (fan_en.title, fan_en.body) == ("Pass attempted", "Blue 8 attempted a forward pass.")
+    assert len(bundle.variants) == 4
+    assert all(p.evidence_ids == ["evt-0042", "metric-forward_progress-0042"] for p in bundle.variants)
+    assert all("13.1" not in p.body for p in bundle.variants)
+    evidence = EvidenceIndex()
+    evidence.add("event", event, session_clock_ms=3000)
+    evidence.add("metric", metric, session_clock_ms=3000)
+    assert all(check_packet(p, evidence, metadata, now_ms=3000) == [] for p in bundle.variants)
+
+
+def test_backward_attempted_pass_is_rejected(pass_event: MatchEvent, metadata: MatchMetadata) -> None:
+    event = attempted(pass_event).model_copy(update={"end_m": (50.0, 28.0)})
+    metric = compute_forward_progress(event, metadata, state_version=12)
+    with pytest.raises(ValueError, match="forward progress"):
+        build_fact_bundle(event, metric, metadata, state_version=12, trace_id=TRACE, now_session_ms=3000)

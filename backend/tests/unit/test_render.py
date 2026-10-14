@@ -124,3 +124,22 @@ def test_catalogs_have_the_same_keys_and_cover_the_skeleton_entries() -> None:
         "label.interpretation",
     } <= en.keys()
     assert "_meta" not in en
+
+
+ATTEMPT_SLOTS = {"passer": SlotValue(kind="player", player_id="blue-08")}
+
+
+def test_pass_attempted_renders_without_numbers_in_every_variant(context: RenderContext) -> None:
+    assert render_claim("fact.pass_attempted", ATTEMPT_SLOTS, "fan", "en", context=context).text == (
+        "Blue 8 attempted a forward pass."
+    )
+    assert render_claim("fact.pass_attempted", ATTEMPT_SLOTS, "analyst", "en", context=context).text == (
+        "Blue 8 attempted a forward pass. The outcome is not recorded in the feed."
+    )
+    for mode, language in itertools.product(("fan", "analyst"), ("en", "hi")):
+        rendered = render_claim("fact.pass_attempted", ATTEMPT_SLOTS, mode, language, context=context)
+        assert rendered.numbers == []
+        assert rendered.player_ids == ["blue-08"]
+    assert "ब्लू 8" in render_claim("fact.pass_attempted", ATTEMPT_SLOTS, "fan", "hi", context=context).text
+    assert render_title("title.pass_attempted", "fan", "en").text == "Pass attempted"
+    assert {"fact.pass_attempted", "title.pass_attempted"} <= load_catalog("hi").keys()
