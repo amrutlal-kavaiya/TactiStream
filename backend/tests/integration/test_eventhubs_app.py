@@ -59,6 +59,24 @@ async def test_eventhubs_bus_carries_a_session_to_the_card() -> None:
     assert hub.producers[0][3].closed
 
 
+async def test_live_state_consumer_group_comes_from_settings() -> None:
+    hub = FakeHub()
+    app = create_app(
+        eventhubs_settings(eventhubs_consumer_group="live-state-b"),
+        clock=FakeClock(),
+        eventhubs_client_factory=hub,
+    )
+    async with (
+        app.router.lifespan_context(app),
+        ASGIWebSocketTransport(app=app) as transport,
+        httpx.AsyncClient(transport=transport, base_url="http://testserver") as client,
+    ):
+        response = await client.post("/api/sessions", json={"scenario": "skeleton"})
+        assert response.status_code == 200, response.text
+        assert list(hub.consumers) == ["live-state-b"]
+        await app.state.registry.aclose()
+
+
 def test_eventhubs_bus_requires_a_namespace() -> None:
     with pytest.raises(ValueError, match="Missing EVENTHUBS_FULLY_QUALIFIED_NAMESPACE"):
         create_app(
