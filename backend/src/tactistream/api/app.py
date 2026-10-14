@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
@@ -21,8 +20,6 @@ from tactistream.transport.bus import FeedBus
 from tactistream.transport.clock import Clock, MonotonicClock
 from tactistream.transport.memory_bus import InMemoryBus
 
-FRONTEND_DIST = Path(__file__).parents[4] / "frontend" / "dist"
-
 
 def create_app(
     settings: Settings | None = None,
@@ -30,7 +27,6 @@ def create_app(
     bus: FeedBus | None = None,
     *,
     wall_ms: WallClock = wall_clock_ms,
-    static_dir: Path | None = FRONTEND_DIST,
 ) -> FastAPI:
     """Build the app. Tests inject a `FakeClock` and bus; `static_dir` is mounted only if it exists."""
     settings = settings or Settings()
@@ -65,6 +61,7 @@ def create_app(
     app.include_router(routes_sessions.router)
     app.include_router(routes_evidence.router)
     app.include_router(ws.router)
+    static_dir = settings.static_dir
     if static_dir is not None and static_dir.is_dir():
         app.mount("/", StaticFiles(directory=static_dir, html=True), name="frontend")
     return app

@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     narrative_deadline_ms: int = Field(
         default=8000, gt=0, validation_alias="TACTISTREAM_NARRATIVE_DEADLINE_MS"
     )
+    static_dir: Path | None = Field(
+        default=_REPO_ROOT / "frontend" / "dist", validation_alias="TACTISTREAM_STATIC_DIR"
+    )
 
     eventhubs_fully_qualified_namespace: str | None = None
     eventhubs_name: str = "tactistream-feed"

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from tactistream.contracts import ContractError, FeedEnvelope, validate
@@ -10,8 +11,12 @@ from tactistream.contracts import ContractError, FeedEnvelope, validate
 _KIND_ORDER = {"metadata": 0, "event": 1}
 
 
+ENV_DATA_DIR = "TACTISTREAM_DATA_DIR"
+DEFAULT_DATA_DIR = Path(__file__).parents[4] / "data"
+
+
 def fixtures_dir() -> Path:
-    return Path(__file__).parents[4] / "data" / "fixtures"
+    return Path(os.environ.get(ENV_DATA_DIR) or DEFAULT_DATA_DIR) / "fixtures"
 
 
 def skeleton_fixture_path() -> Path:

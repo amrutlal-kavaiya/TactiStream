@@ -108,9 +108,9 @@ async def test_unknown_match_websocket_is_closed_with_4404() -> None:
         assert closed.value.code == 4404
 
 
-async def test_frontend_dist_is_served_when_present(tmp_path: Path) -> None:
+async def test_static_dir_is_served_when_present(tmp_path: Path) -> None:
     (tmp_path / "index.html").write_text("<title>TactiStream</title>", encoding="utf-8")
-    app = create_app(Settings(_env_file=None, frontend_dist=tmp_path), clock=FakeClock())
+    app = create_app(Settings(_env_file=None, static_dir=tmp_path), clock=FakeClock())
     async with (
         ASGIWebSocketTransport(app=app) as transport,
         httpx.AsyncClient(transport=transport, base_url="http://testserver") as client,

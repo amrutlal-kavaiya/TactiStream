@@ -85,9 +85,9 @@ def test_reads_dotenv_file(tmp_path: Path) -> None:
     assert s.eventhubs_name == "other-hub"
 
 
-def test_frontend_dist_defaults_to_repo_and_is_overridable(
+def test_static_dir_defaults_to_frontend_dist_and_is_overridable(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    assert Settings(_env_file=None).frontend_dist == ENV_EXAMPLE.parent / "frontend" / "dist"
-    monkeypatch.setenv("TACTISTREAM_FRONTEND_DIST", str(tmp_path))
-    assert Settings(_env_file=None).frontend_dist == tmp_path
+    assert Settings(_env_file=None).static_dir == ENV_EXAMPLE.parent / "frontend" / "dist"
+    monkeypatch.setenv("TACTISTREAM_STATIC_DIR", str(tmp_path))
+    assert Settings(_env_file=None).static_dir == tmp_path
