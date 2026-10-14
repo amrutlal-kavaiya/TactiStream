@@ -1,6 +1,6 @@
 import pytest
 
-from tactistream.agents.checks import CheckFailure, check_packet
+from tactistream.agents.checks import _NUMBER, CheckFailure, check_packet
 from tactistream.api.evidence import EvidenceIndex
 from tactistream.contracts import InsightPacket, MatchEvent, MatchMetadata, RenderSpec
 from tactistream.metrics.forward_progress import compute_forward_progress
@@ -151,3 +151,26 @@ def test_positive_text_number_does_not_match_negative_metric(
     assert codes(check_packet(packet.model_copy(update={"body": body}), index, metadata, now_ms=3000)) == [
         "unsupported_number"
     ]
+
+
+@pytest.mark.parametrize(
+    ("text", "numbers"),
+    [
+        ("Blue 8 completed 3-14 passes", ["8", "3", "14"]),
+        ("a 13.1-99 m run", ["13.1", "99"]),
+        ("progress of -13.1 m", ["-13.1"]),
+        ("(-5)", ["-5"]),
+        ("evt-0042", ["0042"]),
+    ],
+)
+def test_number_extraction_handles_ranges_and_standalone_minus(text: str, numbers: list[str]) -> None:
+    assert _NUMBER.findall(text) == numbers
+
+
+def test_unsupported_number_after_a_range_hyphen_is_flagged(
+    packet: InsightPacket, evidence: EvidenceIndex, metadata: MatchMetadata
+) -> None:
+    ranged = packet.model_copy(update={"body": FAN_EN.replace("13.1", "13.1-14")})
+    failures = check_packet(ranged, evidence, metadata, now_ms=3000)
+    assert codes(failures) == ["unsupported_number"]
+    assert "14" in failures[0].detail
