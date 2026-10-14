@@ -8,10 +8,13 @@ import secrets
 import time
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from agent_framework import ChatResponse, Message
 from jsonschema import Draft202012Validator
+
+if TYPE_CHECKING:
+    from agent_framework.foundry import FoundryChatClient
 
 REPLY_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -29,6 +32,8 @@ class SmokeError(Exception):
 class SmokeChatClient(Protocol):
     def get_response(self, messages: Sequence[Message]) -> Awaitable[ChatResponse[Any]]: ...
 
+    async def close(self) -> None: ...
+
 
 ChatClientFactory = Callable[[str, str, Any], SmokeChatClient]
 
@@ -44,13 +49,26 @@ class FoundrySmokeResult:
     reply: dict[str, Any]
 
 
-def foundry_chat_client(endpoint: str, deployment: str, credential: Any) -> SmokeChatClient:
+class FoundrySmokeClient:
+    """`FoundryChatClient` has no `close()` but owns an `AIProjectClient` and the `AsyncOpenAI` client."""
+
+    def __init__(self, chat: FoundryChatClient) -> None:
+        self.chat = chat
+
+    def get_response(self, messages: Sequence[Message]) -> Awaitable[ChatResponse[Any]]:
+        return self.chat.get_response(messages)
+
+    async def close(self) -> None:
+        await self.chat.client.close()
+        await self.chat.project_client.close()
+
+
+def foundry_chat_client(endpoint: str, deployment: str, credential: Any) -> FoundrySmokeClient:
     from agent_framework.foundry import FoundryChatClient
 
-    client: SmokeChatClient = FoundryChatClient(
-        project_endpoint=endpoint, model=deployment, credential=credential
+    return FoundrySmokeClient(
+        FoundryChatClient(project_endpoint=endpoint, model=deployment, credential=credential)
     )
-    return client
 
 
 def prompt(token: str) -> list[Message]:
@@ -109,9 +127,12 @@ async def _round_trip(
     token: str,
 ) -> FoundrySmokeResult:
     client = client_factory(endpoint, deployment, credential)
-    started = clock()
-    response = await client.get_response(prompt(token))
-    latency_ms = round((clock() - started) * 1000)
+    try:
+        started = clock()
+        response = await client.get_response(prompt(token))
+        latency_ms = round((clock() - started) * 1000)
+    finally:
+        await client.close()
     usage = response.usage_details or {}
     return FoundrySmokeResult(
         deployment=deployment,
