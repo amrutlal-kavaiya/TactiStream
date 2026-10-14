@@ -239,32 +239,38 @@ class SessionRegistry:
         self._latency = latency
         self._wall_ms = wall_ms
         self._sessions: dict[str, MatchSession] = {}
+        self._create_locks: dict[str, asyncio.Lock] = {}
         self._consumer: asyncio.Task[None] | None = None
 
     def get(self, match_id: str) -> MatchSession | None:
         return self._sessions.get(match_id)
 
     async def create(self, scenario: str) -> MatchSession:
-        """Start a session for the scenario; one already running for that match is reset and reused."""
+        """Start a session for the scenario; one already running for that match is reset and reused.
+
+        Creates for the same match are serialized, so no caller is handed a session whose start then fails.
+        """
         locate = SCENARIOS.get(scenario)
         if locate is None:
             raise UnknownScenarioError(f"unknown scenario {scenario!r}")
         records = _scenario_records(locate())
-        existing = self._sessions.get(records[0].match_id)
-        if existing is not None:
-            await existing.reset()
-            return existing
-        if self._consumer is None:
-            self._consumer = asyncio.create_task(self._consume(self._bus.subscribe(LIVE_STATE_GROUP)))
-        session = MatchSession(records, self._bus, self._clock, self._wall_ms, self._latency)
-        self._sessions[session.match_id] = session
-        try:
-            await session.start(self._ready_timeout_s or READY_TIMEOUT_S)
-        except SessionStartError:
-            del self._sessions[session.match_id]
-            await session.aclose()
-            raise
-        return session
+        match_id = records[0].match_id
+        async with self._create_locks.setdefault(match_id, asyncio.Lock()):
+            existing = self._sessions.get(match_id)
+            if existing is not None:
+                await existing.reset()
+                return existing
+            if self._consumer is None:
+                self._consumer = asyncio.create_task(self._consume(self._bus.subscribe(LIVE_STATE_GROUP)))
+            session = MatchSession(records, self._bus, self._clock, self._wall_ms, self._latency)
+            self._sessions[match_id] = session
+            try:
+                await session.start(self._ready_timeout_s or READY_TIMEOUT_S)
+            except SessionStartError:
+                del self._sessions[match_id]
+                await session.aclose()
+                raise
+            return session
 
     async def aclose(self) -> None:
         for session in self._sessions.values():
