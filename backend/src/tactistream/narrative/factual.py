@@ -32,16 +32,28 @@ def build_fact_bundle(
     trace_id: str,
     now_session_ms: int,
 ) -> InsightBundle:
-    """`fact.forward_pass` in every (mode, language), shown from the end of the pass for 6 s."""
-    if event.event_type != "pass" or event.outcome != "complete" or event.recipient_id is None:
-        raise ValueError(f"fact.forward_pass needs a completed pass, got {event.event_id}")
+    """Fact card in every (mode, language), shown from the end of the pass for 6 s.
+
+    A completed pass gets `fact.forward_pass`; a pass without a recorded outcome gets `fact.pass_attempted`
+    (no progress number). Either needs positive forward progress.
+    """
+    if event.event_type != "pass":
+        raise ValueError(f"fact cards need a pass, got {event.event_type} {event.event_id}")
     if metric.value is None or metric.value <= 0:
-        raise ValueError(f"fact.forward_pass needs positive forward progress, got {metric.value}")
-    slots = {
-        "passer": SlotValue(kind="player", player_id=event.player_id),
-        "receiver": SlotValue(kind="player", player_id=event.recipient_id),
-        "progress": SlotValue(kind="metric", metric_id=metric.metric_id),
-    }
+        raise ValueError(f"fact cards need positive forward progress, got {metric.value}")
+    passer = SlotValue(kind="player", player_id=event.player_id)
+    if event.outcome == "complete" and event.recipient_id is not None:
+        template, title_template = "fact.forward_pass", "title.forward_pass"
+        slots = {
+            "passer": passer,
+            "receiver": SlotValue(kind="player", player_id=event.recipient_id),
+            "progress": SlotValue(kind="metric", metric_id=metric.metric_id),
+        }
+    elif event.outcome is None:
+        template, title_template = "fact.pass_attempted", "title.pass_attempted"
+        slots = {"passer": passer}
+    else:
+        raise ValueError(f"no fact card for a pass with outcome {event.outcome} ({event.event_id})")
     context = RenderContext(metadata=metadata, metrics={metric.metric_id: metric})
     show_from_ms = event.session_clock_ms + (event.duration_ms or 0)
     render = RenderSpec(
@@ -67,8 +79,8 @@ def build_fact_bundle(
             language=language,
             source_kind=event.source.kind,
             claim_status="verified_fact",
-            title=render_title("title.forward_pass", mode, language).text,
-            body=render_claim("fact.forward_pass", slots, mode, language, context=context).text,
+            title=render_title(title_template, mode, language).text,
+            body=render_claim(template, slots, mode, language, context=context).text,
             labels=labels,
             evidence_ids=[event.event_id, metric.metric_id],
             claim_ids=[],

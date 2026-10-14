@@ -164,7 +164,8 @@ def detect_moments(snapshot: MatchSnapshot, metrics: MetricEngine) -> list[Candi
 async def explain_moment(moment: CandidateMoment, ctx: WorkflowContext) -> WorkflowResult: ...
 
 # narrative/render.py
-def render_claim(template_id: str, slots: dict[str, SlotValue], mode: ViewerMode, language: Language) -> RenderedText: ...
+def render_claim(template_id: str, slots: Mapping[str, SlotValue], mode: ViewerMode, language: Language,
+                 *, context: RenderContext | None) -> RenderedText: ...   # context = metadata + metrics for slot resolution
 ```
 
 ### Clocks & coordinates
@@ -196,7 +197,8 @@ not ahead of time. Agents never receive `match_id` or scenario labels in model i
 - **Annotation IDs** are parsed and resolved in one place: `moments/annotation_ids.py` + `moments/annotations.py` (004).
   005's `moments/scene.py` builds geometry on top, so output checks and replay accept exactly the same IDs.
 - **Narrative catalog**: `narrative/catalog/spec.json` holds template metadata (kind, slots, precision); `en.json` / `hi.json`
-  hold text only; `_meta` is excluded from key parity. Interpretation template IDs: `interp.space_opened_by_run`,
+  hold text only; `_meta` is excluded from key parity. Fact template IDs (001): `fact.forward_pass`, `fact.pass_attempted`
+  (titles `title.forward_pass`, `title.pass_attempted`). Interpretation template IDs: `interp.space_opened_by_run`,
   `interp.defender_followed_runner`, `interp.pressure_preceded_turnover`, `interp.switch_escaped_pressure`.
 - **Pinned ranking** is demonstrated on `demo_match` seed 42 (the standalone hero scenario has one moment); 002
   guarantees its unpinned rank-1 moment does not involve Blue 9 (003 T075).

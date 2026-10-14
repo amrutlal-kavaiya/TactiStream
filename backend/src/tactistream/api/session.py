@@ -168,7 +168,7 @@ class MatchSession:
         elif isinstance(payload, MatchEvent):
             self.evidence.add("event", payload, payload.session_clock_ms)
             self.hub.broadcast("event", payload, server_receipt_ms=receipt)
-            if payload.event_type == "pass" and payload.outcome == "complete":
+            if payload.event_type == "pass" and payload.outcome in ("complete", None):
                 self._explain_pass(payload, receipt)
         elif isinstance(payload, TrackingFrame):
             self.evidence.add("frame", payload, payload.session_clock_ms)

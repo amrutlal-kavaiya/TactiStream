@@ -1,9 +1,23 @@
 {
-  "_meta": { "language": "hi", "status": "draft, review in 006" },
-  "title.forward_pass": { "fan": "आगे की ओर पास", "analyst": "आगे की ओर पास" },
+  "_meta": {
+    "language": "hi",
+    "status": "draft, review in 006"
+  },
+  "title.forward_pass": {
+    "fan": "आगे की ओर पास",
+    "analyst": "आगे की ओर पास"
+  },
   "fact.forward_pass": {
     "fan": "{passer} ने {receiver} को आगे की ओर पास दिया ({progress} मी आगे)।",
     "analyst": "{passer} ने {receiver} को आगे की ओर पास दिया ({progress} मी आगे)। आक्रमण अक्ष पर प्रगति: {progress} मी ({progress.event_ids})।"
+  },
+  "title.pass_attempted": {
+    "fan": "पास का प्रयास",
+    "analyst": "पास का प्रयास"
+  },
+  "fact.pass_attempted": {
+    "fan": "{passer} ने आगे की ओर पास का प्रयास किया।",
+    "analyst": "{passer} ने आगे की ओर पास का प्रयास किया। फ़ीड में परिणाम दर्ज नहीं है।"
   },
   "status.insufficient_tracking": "इस व्याख्या के लिए पर्याप्त ट्रैकिंग उपलब्ध नहीं है",
   "label.synthetic": "सिंथेटिक",

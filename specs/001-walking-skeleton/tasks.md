@@ -75,6 +75,7 @@ description: "Task list for 001 walking skeleton"
 - [x] T036 [P] [US1] Write failing `backend/tests/integration/test_ws_resume.py`: client disconnects after seq K, reconnects with `resume{last_seq:K}` → receives snapshot whose `events` contain each event exactly once and later live messages have `seq > snapshot.seq`
 - [x] T037 [P] [US1] Write failing `backend/tests/integration/test_evidence_api.py`: `evt-0042` → 200 kind `event`; `metric-forward_progress-0042` → 200 kind `metric`; `evt-9999` → 404 `evidence_not_found`; `evt-0043` before its session time → 404
 - [x] T038 [US1] Fix/complete implementation until T036–T037 pass; add duplicate+swap replay test to `test_session_flow.py` (bus publishes each envelope twice with adjacent swaps) asserting exactly one `insight` message (SC-004)
+- [x] T038a [US1] Attempted-pass card (spec edge case "outcome = null"): catalog `title.pass_attempted` + `fact.pass_attempted` (slot `passer` only, no numbers) in `spec.json`/`en.json`/`hi.json`; `build_fact_bundle` picks `fact.forward_pass` for completed passes and `fact.pass_attempted` for `outcome = null`; session emits a card only when `forward_progress > 0` (backward/zero-progress and incomplete passes get no card); output number checks are sign-aware. Tests in `test_render.py`, `test_factual.py`, `test_session.py`, `test_checks.py`
 
 ### Frontend
 
