@@ -32,10 +32,14 @@ Open http://localhost:5173 → **Start demo match**. Expected within ~3 s:
 ## Tests
 
 ```bash
+make lint        # ruff, ruff format --check, mypy; eslint, tsc
 make test        # backend pytest (non-live) + frontend vitest
-make e2e         # Playwright smoke against `make dev`-equivalent server
+make e2e         # Playwright smoke: builds the frontend and starts its own backend on :8000 serving it
 make contracts   # validate examples, regenerate TS types, fail on drift
 ```
+
+Stop `make dev` before `make e2e`: Playwright never reuses a server already listening on :8000 and fails if the port is
+taken.
 
 ## Azure smoke (day one)
 
