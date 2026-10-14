@@ -4,6 +4,13 @@ from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from azure.eventhub.exceptions import (
+    AuthenticationError,
+    ConnectionLostError,
+    EventHubError,
+    OperationTimeoutError,
+)
+from azure.identity import CredentialUnavailableError
 from support.fake_eventhubs import FakeHub
 
 from tactistream.contracts import FeedEnvelope
@@ -136,12 +143,70 @@ async def test_undecodable_bodies_are_skipped(skeleton: list[FeedEnvelope]) -> N
     await bus.close()
 
 
+def not_found(message: str) -> ConnectionLostError:
+    error = ConnectionLostError(message)
+    error.error = "not-found"
+    return error
+
+
 async def test_receive_failure_surfaces_from_the_iterator() -> None:
-    hub = FakeHub(consumer_error=PermissionError("unauthorized"))
+    hub = FakeHub(consumer_error=AuthenticationError("unauthorized"))
     bus = make_bus(hub)
     live = bus.subscribe("live-state")
-    with pytest.raises(PermissionError, match="unauthorized"):
+    with pytest.raises(AuthenticationError, match="unauthorized"):
         await asyncio.wait_for(anext(live), timeout=1)
+    (consumer,) = hub.consumers["live-state"]
+    assert consumer.on_error is not None
+    assert consumer.cancelled
+    with pytest.raises(AuthenticationError):
+        await asyncio.wait_for(anext(bus.subscribe("live-state")), timeout=1)
+    await bus.close()
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        CredentialUnavailableError("run az login"),
+        not_found(
+            "The messaging entity 'ns:eventhub:tactistream-feed/consumergroup:nope' could not be found"
+        ),
+        EventHubError("unexpected"),
+    ],
+)
+async def test_non_transient_errors_fail_on_first_report(
+    skeleton: list[FeedEnvelope], error: Exception
+) -> None:
+    hub = FakeHub()
+    bus = make_bus(hub)
+    live = bus.subscribe("live-state")
+    consumer = await hub.receiving("live-state")
+    await consumer.fail(error)
+    await bus.publish(skeleton[0])
+    with pytest.raises(type(error)):
+        await asyncio.wait_for(anext(live), timeout=1)
+    await bus.close()
+
+
+async def test_transient_errors_are_tolerated_up_to_the_bound(skeleton: list[FeedEnvelope]) -> None:
+    hub = FakeHub()
+    bus = make_bus(hub, max_transient_errors=3)
+    live = bus.subscribe("live-state")
+    consumer = await hub.receiving("live-state")
+    for _ in range(3):
+        await consumer.fail(ConnectionLostError("link detached"))
+    await bus.publish(skeleton[0])
+    assert [e.record_id for e in await take(live, 1)] == [skeleton[0].record_id]
+
+    for _ in range(3):
+        await consumer.fail(OperationTimeoutError("timed out"))
+    await bus.publish(skeleton[1])
+    assert [e.record_id for e in await take(live, 1)] == [skeleton[1].record_id]
+
+    for _ in range(4):
+        await consumer.fail(ConnectionLostError("link detached"))
+    with pytest.raises(ConnectionLostError):
+        await asyncio.wait_for(anext(live), timeout=1)
+    assert consumer.cancelled
     await bus.close()
 
 

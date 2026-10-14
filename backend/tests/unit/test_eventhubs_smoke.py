@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
+from azure.eventhub.exceptions import AuthenticationError
 from support.fake_eventhubs import FakeHub
 
 from tactistream.smoke.eventhubs import EventHubsSmokeResult, run_eventhubs_smoke
@@ -70,6 +71,13 @@ async def test_not_read_back_within_timeout_is_a_smoke_error() -> None:
     with pytest.raises(SmokeError, match=r"not read back via live-state within 0\.05 s"):
         await run(hub, timeout_s=0.05, clock=clock(1.0))
     assert hub.producers[0][3].closed
+
+
+async def test_consumer_failure_is_raised_with_its_cause_not_a_timeout() -> None:
+    hub = FakeHub(consumer_error=AuthenticationError("unauthorized: no Data Receiver role"))
+    with pytest.raises(AuthenticationError, match="no Data Receiver role"):
+        await run(hub, timeout_s=5, clock=clock(1.0))
+    assert hub.consumers["live-state"][0].closed
 
 
 async def test_read_back_that_differs_from_the_sent_envelope_is_a_smoke_error() -> None:

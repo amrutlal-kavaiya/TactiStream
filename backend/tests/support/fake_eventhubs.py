@@ -8,6 +8,7 @@ from typing import Any
 from azure.eventhub import EventData
 
 OnEvent = Callable[[Any, EventData | None], Awaitable[None]]
+OnError = Callable[[Any, Exception], Awaitable[None]]
 
 
 class FakeProducer:
@@ -30,28 +31,48 @@ class FakeProducer:
 
 
 class FakeConsumer:
-    """`@latest` sees only sends after `receive` starts; a datetime position replays the hub log from then."""
+    """`@latest` sees only sends after `receive` starts; a datetime position replays the hub log from then.
+
+    Like the SDK, `receive` never raises for service errors: it reports them to `on_error` and keeps going.
+    """
 
     def __init__(self, hub: "FakeHub", consumer_group: str) -> None:
         self.hub = hub
         self.consumer_group = consumer_group
         self.on_event: OnEvent | None = None
+        self.on_error: OnError | None = None
         self.starting_position: str | datetime | None = None
         self.receiving = asyncio.Event()
         self.stopped = asyncio.Event()
         self.closed = False
+        self.cancelled = False
 
-    async def receive(self, on_event: OnEvent, *, starting_position: str | datetime | None = None) -> None:
+    async def receive(
+        self,
+        on_event: OnEvent,
+        *,
+        starting_position: str | datetime | None = None,
+        on_error: OnError | None = None,
+    ) -> None:
         self.on_event = on_event
+        self.on_error = on_error
         self.starting_position = starting_position
-        if self.hub.consumer_error is not None:
-            raise self.hub.consumer_error
-        if isinstance(starting_position, datetime):
-            for enqueued, body in list(self.hub.log):
-                if enqueued >= starting_position:
-                    await on_event(None, EventData(body))
-        self.receiving.set()
-        await self.stopped.wait()
+        try:
+            if self.hub.consumer_error is not None:
+                await self.fail(self.hub.consumer_error)
+            if isinstance(starting_position, datetime):
+                for enqueued, body in list(self.hub.log):
+                    if enqueued >= starting_position:
+                        await on_event(None, EventData(body))
+            self.receiving.set()
+            await self.stopped.wait()
+        except asyncio.CancelledError:
+            self.cancelled = True
+            raise
+
+    async def fail(self, error: Exception) -> None:
+        if self.on_error is not None:
+            await self.on_error(None, error)
 
     async def push(self, body: str) -> None:
         if self.on_event is not None and self.receiving.is_set():

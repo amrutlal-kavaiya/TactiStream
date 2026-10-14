@@ -1,6 +1,7 @@
 from typing import Any
 
 import pytest
+from azure.eventhub.exceptions import AuthenticationError
 from typer.testing import CliRunner
 
 from tactistream.settings import Settings
@@ -102,7 +103,7 @@ def test_foundry_failure_exits_1_without_traceback(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(cli, "run_foundry_smoke", fake_run)
     result = invoke("foundry")
     assert result.exit_code == 1
-    assert f"foundry smoke failed: {error}" in result.output
+    assert f"foundry smoke failed: {type(error).__name__}: {error}" in result.output
     assert "Traceback" not in result.output
     assert isinstance(result.exception, SystemExit)
 
@@ -135,10 +136,10 @@ def test_eventhubs_failure_exits_1_without_traceback(monkeypatch: pytest.MonkeyP
     monkeypatch.setenv("EVENTHUBS_FULLY_QUALIFIED_NAMESPACE", "tactistream.servicebus.windows.net")
 
     async def fake_run(namespace: str, hub: str) -> EventHubsSmokeResult:
-        raise SmokeError("envelope evt-1 not read back via live-state within 30 s")
+        raise AuthenticationError("unauthorized: no Data Receiver role")
 
     monkeypatch.setattr(cli, "run_eventhubs_smoke", fake_run)
     result = invoke("eventhubs")
     assert result.exit_code == 1
-    assert "eventhubs smoke failed: envelope evt-1 not read back" in result.output
+    assert "eventhubs smoke failed: AuthenticationError: unauthorized: no Data Receiver role" in result.output
     assert "Traceback" not in result.output
