@@ -15,7 +15,7 @@ CheckCode = Literal[
 ]
 
 _EVIDENCE_TOKEN = re.compile(r"\b(?:evt-\d{4,}|frm-\d{6,}|metric-[a-z_]+-\d{4,}(?:-(?:blue|amber)-\d{2})?)\b")
-_NUMBER = re.compile(r"(?<![\w.-])-?\d+(?:\.\d+)?(?!\d)")
+_NUMBER = re.compile(r"(?:(?<![\w.])-)?(?<![\w.])\d+(?:\.\d+)?(?!\d)")
 
 
 @dataclass(frozen=True)
