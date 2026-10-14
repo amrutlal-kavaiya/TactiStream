@@ -5,25 +5,31 @@ from typing import Any
 import pytest
 from agent_framework import ChatResponse, Message
 
-from tactistream.smoke.foundry import SmokeError, run_foundry_smoke
+from tactistream.smoke.foundry import FoundrySmokeClient, SmokeError, foundry_chat_client, run_foundry_smoke
 
 ENDPOINT = "https://x.services.ai.azure.com/api/projects/p"
 TOKEN = "f00dfeed"
 
 
 class FakeChatClient:
-    def __init__(self, text: str, usage: dict[str, int] | None = None) -> None:
+    def __init__(self, text: str | Exception, usage: dict[str, int] | None = None) -> None:
         self.text = text
         self.usage = usage
         self.calls: list[Sequence[Message]] = []
+        self.closed = False
 
     async def get_response(self, messages: Sequence[Message]) -> ChatResponse[Any]:
         self.calls.append(messages)
+        if isinstance(self.text, Exception):
+            raise self.text
         return ChatResponse(
             messages=[Message(role="assistant", contents=[self.text])],
             model="gpt-4o-mini-2024-07-18",
             usage_details=self.usage,  # type: ignore[arg-type]
         )
+
+    async def close(self) -> None:
+        self.closed = True
 
 
 class Factory:
@@ -40,7 +46,7 @@ def ticks(*seconds: float) -> Iterator[float]:
     return iter(seconds)
 
 
-async def run(text: str, usage: dict[str, int] | None = None, **kw: Any) -> tuple[Any, Factory]:
+async def run(text: str | Exception, usage: dict[str, int] | None = None, **kw: Any) -> tuple[Any, Factory]:
     factory = Factory(FakeChatClient(text, usage))
     clock = ticks(10.0, 10.4125)
     result = await run_foundry_smoke(
@@ -100,3 +106,39 @@ async def test_missing_usage_and_region_are_reported_as_unknown() -> None:
 async def test_invalid_replies_raise_smoke_error(text: str, reason: str) -> None:
     with pytest.raises(SmokeError, match=reason):
         await run(text)
+
+
+async def test_client_is_closed_after_success_and_failure() -> None:
+    _, factory = await run(json.dumps({"ok": True, "echo": TOKEN}))
+    assert factory.client.closed
+
+    failing = Factory(FakeChatClient(ConnectionError("dns")))
+    with pytest.raises(ConnectionError):
+        await run_foundry_smoke(
+            ENDPOINT, "gpt-4o-mini", credential="cred", client_factory=failing, token=TOKEN
+        )
+    assert failing.client.closed
+
+
+class StaticCredential:
+    async def get_token(self, *scopes: str, **kwargs: Any) -> Any:
+        raise AssertionError("no network in unit tests")
+
+    async def close(self) -> None:
+        return None
+
+
+async def test_foundry_client_close_closes_the_openai_and_project_clients(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = foundry_chat_client(ENDPOINT, "gpt-4o-mini", StaticCredential())
+    assert isinstance(client, FoundrySmokeClient)
+    closed: list[str] = []
+
+    async def project_close() -> None:
+        closed.append("project")
+
+    monkeypatch.setattr(client.chat.project_client, "close", project_close)
+    await client.close()
+    assert client.chat.client.is_closed()
+    assert closed == ["project"]
