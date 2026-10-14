@@ -35,8 +35,11 @@ Open http://localhost:5173 → **Start demo match**. Expected within ~3 s:
 make lint        # ruff, ruff format --check, mypy; eslint, tsc
 make test        # backend pytest (non-live) + frontend vitest
 make e2e         # Playwright smoke: builds the frontend and starts its own backend on :8000 serving it
-make contracts   # validate examples, regenerate TS types, fail on drift
+make contracts   # validate examples, regenerate TS types, fail on drift vs HEAD
 ```
+
+`make contracts` compares against the last commit: after an intentional schema change, commit the schema and the
+regenerated `frontend/src/contracts/generated.ts` together.
 
 Stop `make dev` before `make e2e`: Playwright never reuses a server already listening on :8000 and fails if the port is
 taken.
