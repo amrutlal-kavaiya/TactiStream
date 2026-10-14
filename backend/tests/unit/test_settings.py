@@ -91,3 +91,11 @@ def test_static_dir_defaults_to_frontend_dist_and_is_overridable(
     assert Settings(_env_file=None).static_dir == ENV_EXAMPLE.parent / "frontend" / "dist"
     monkeypatch.setenv("TACTISTREAM_STATIC_DIR", str(tmp_path))
     assert Settings(_env_file=None).static_dir == tmp_path
+
+
+def test_data_dir_defaults_to_repo_data_and_is_overridable(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    assert Settings(_env_file=None).data_dir == ENV_EXAMPLE.parent / "data"
+    monkeypatch.setenv("TACTISTREAM_DATA_DIR", str(tmp_path))
+    assert Settings(_env_file=None).data_dir == tmp_path

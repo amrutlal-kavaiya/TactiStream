@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 LIVE_STATE_GROUP = "live-state"
 READY_TIMEOUT_S = 5.0
-SCENARIOS: dict[str, Callable[[], Path]] = {"skeleton": skeleton_fixture_path}
+SCENARIOS: dict[str, Callable[[Path | None], Path]] = {"skeleton": skeleton_fixture_path}
 
 WallClock = Callable[[], int]
 
@@ -232,8 +232,10 @@ class SessionRegistry:
         latency: LatencyRecorder,
         wall_ms: WallClock = wall_clock_ms,
         ready_timeout_s: float | None = None,
+        data_dir: Path | None = None,
     ) -> None:
         self._bus = bus
+        self._data_dir = data_dir
         self._ready_timeout_s = ready_timeout_s
         self._clock = clock
         self._latency = latency
@@ -253,7 +255,12 @@ class SessionRegistry:
         locate = SCENARIOS.get(scenario)
         if locate is None:
             raise UnknownScenarioError(f"unknown scenario {scenario!r}")
-        records = _scenario_records(locate())
+        path = locate(self._data_dir)
+        try:
+            records = _scenario_records(path)
+        except OSError as exc:
+            logger.error("fixture for scenario %r is unreadable: %s", scenario, exc)
+            raise UnknownScenarioError(f"scenario {scenario!r} is not available on this server") from exc
         match_id = records[0].match_id
         async with self._create_locks.setdefault(match_id, asyncio.Lock()):
             existing = self._sessions.get(match_id)

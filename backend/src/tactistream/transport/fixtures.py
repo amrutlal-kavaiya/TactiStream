@@ -15,12 +15,12 @@ ENV_DATA_DIR = "TACTISTREAM_DATA_DIR"
 DEFAULT_DATA_DIR = Path(__file__).parents[4] / "data"
 
 
-def fixtures_dir() -> Path:
-    return Path(os.environ.get(ENV_DATA_DIR) or DEFAULT_DATA_DIR) / "fixtures"
+def fixtures_dir(data_dir: Path | None = None) -> Path:
+    return Path(data_dir or os.environ.get(ENV_DATA_DIR) or DEFAULT_DATA_DIR) / "fixtures"
 
 
-def skeleton_fixture_path() -> Path:
-    return fixtures_dir() / "skeleton.jsonl"
+def skeleton_fixture_path(data_dir: Path | None = None) -> Path:
+    return fixtures_dir(data_dir) / "skeleton.jsonl"
 
 
 def envelope_time_ms(envelope: FeedEnvelope) -> int:

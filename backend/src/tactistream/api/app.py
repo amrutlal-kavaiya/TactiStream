@@ -38,7 +38,7 @@ def create_app(
         bus = owned_bus = InMemoryBus()
     clock = clock or MonotonicClock()
     latency = LatencyRecorder()
-    registry = SessionRegistry(bus, clock, latency, wall_ms)
+    registry = SessionRegistry(bus, clock, latency, wall_ms, data_dir=settings.data_dir)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
