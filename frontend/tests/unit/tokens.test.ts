@@ -1,12 +1,23 @@
 /// <reference types="node" />
 import { readFileSync } from 'node:fs'
 
+import type { Theme } from '@fluentui/react-components'
 import { describe, expect, it } from 'vitest'
+
+import { darkTheme, lightTheme } from '../../src/theme/brand'
 
 const css = readFileSync(`${import.meta.dirname}/../../src/styles/tokens.css`, 'utf8')
 
-function token(name: string): string {
-  const match = new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})\\s*;`).exec(css)
+function block(selector: string): string {
+  const start = css.indexOf(`${selector} {`)
+  if (start < 0) throw new Error(`missing ${selector} block`)
+  return css.slice(start, css.indexOf('}', start))
+}
+
+function token(name: string, theme: 'dark' | 'light' = 'dark'): string {
+  const pattern = new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})\\s*;`)
+  const own = theme === 'light' ? pattern.exec(block("[data-theme='light']")) : null
+  const match = own ?? pattern.exec(block(':root'))
   if (!match?.[1]) throw new Error(`missing color token --${name}`)
   return match[1]
 }
@@ -24,22 +35,52 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05)
 }
 
-describe('design tokens', () => {
-  it('use the brand Blue and Amber', () => {
-    expect(token('color-blue').toUpperCase()).toBe('#3B82F6')
-    expect(token('color-amber').toUpperCase()).toBe('#F59E0B')
+const themes = [
+  ['dark', darkTheme],
+  ['light', lightTheme],
+] as const
+
+const backgrounds = ['colorNeutralBackground1', 'colorNeutralBackground2'] as const
+
+const textTokens = [
+  'colorNeutralForeground1',
+  'colorNeutralForeground2',
+  'colorNeutralForeground3',
+  'colorBrandForeground1',
+  'colorBrandForegroundLink',
+] as const
+
+describe('app tokens', () => {
+  it('keep the brand team Blue and Amber', () => {
+    expect(token('ts-team-blue').toUpperCase()).toBe('#3B82F6')
+    expect(token('ts-team-amber').toUpperCase()).toBe('#F59E0B')
   })
 
-  it.each([
-    ['color-text', 'color-surface'],
-    ['color-text', 'color-surface-raised'],
-    ['color-text-muted', 'color-surface'],
-    ['color-text-muted', 'color-surface-raised'],
-    ['color-link', 'color-surface-raised'],
-    ['color-danger', 'color-surface-raised'],
-    ['color-on-accent', 'color-blue'],
-    ['color-on-accent', 'color-amber'],
-  ])('%s on %s has contrast of at least 4.5:1', (fg, bg) => {
-    expect(contrast(token(fg), token(bg))).toBeGreaterThanOrEqual(4.5)
+  it('contain only team and pitch colours', () => {
+    const names = [...css.matchAll(/--([a-z0-9-]+):/g)].map((m) => m[1])
+    for (const name of names) expect(name).toMatch(/^ts-(team|pitch)-/)
+  })
+
+  it('draw pitch lines at 3:1 or more on the grass', () => {
+    expect(contrast(token('ts-pitch-line'), token('ts-pitch-grass'))).toBeGreaterThanOrEqual(3)
+  })
+})
+
+describe.each(themes)('%s theme contrast', (name, theme: Theme) => {
+  describe.each(backgrounds)('on %s', (background) => {
+    it.each(textTokens)('%s text is at least 4.5:1', (fg) => {
+      expect(contrast(theme[fg], theme[background])).toBeGreaterThanOrEqual(4.5)
+    })
+
+    it.each(['ts-team-blue', 'ts-team-amber'])('%s swatch is at least 3:1', (team) => {
+      expect(contrast(token(team, name), theme[background])).toBeGreaterThanOrEqual(3)
+    })
+  })
+
+  it('white-on-brand button text is at least 4.5:1 at rest and on hover', () => {
+    expect(contrast(theme.colorNeutralForegroundOnBrand, theme.colorBrandBackground)).toBeGreaterThanOrEqual(4.5)
+    expect(contrast(theme.colorNeutralForegroundOnBrand, theme.colorBrandBackgroundHover)).toBeGreaterThanOrEqual(
+      4.5,
+    )
   })
 })
