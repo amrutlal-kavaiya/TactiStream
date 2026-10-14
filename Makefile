@@ -12,7 +12,7 @@ help:
 install:
 	cd $(BACKEND) && uv sync
 	cd $(FRONTEND) && npm ci
-	cd $(FRONTEND) && npx playwright install chromium
+	cd $(FRONTEND) && npx playwright install --with-deps chromium
 
 dev:
 	@trap 'kill 0' EXIT; \
@@ -34,7 +34,7 @@ lint:
 contracts:
 	cd $(BACKEND) && uv run pytest tests/contract -q
 	cd $(FRONTEND) && npm run contracts:gen
-	git diff --exit-code -- $(FRONTEND)/src/contracts/generated.ts
+	git diff --exit-code HEAD -- $(FRONTEND)/src/contracts/generated.ts
 
 smoke:
 	cd $(BACKEND) && uv run tactistream-smoke foundry
