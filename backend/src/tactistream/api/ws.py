@@ -10,6 +10,7 @@ from typing import Any
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import ValidationError
+from starlette.websockets import WebSocketDisconnected
 
 from tactistream.api.session import MatchSession, SessionRegistry
 from tactistream.api.ws_hub import Subscription
@@ -25,6 +26,8 @@ CLOSE_UNKNOWN_MATCH = 4404
 CLOSE_GOING_AWAY = 1001
 CLOSE_INTERNAL_ERROR = 1011
 CLOSE_TOO_SLOW = 1013
+
+_CLIENT_GONE = (WebSocketDisconnect, WebSocketDisconnected)
 
 
 @router.websocket("/ws/matches/{match_id}")
@@ -62,13 +65,17 @@ class MatchConnection:
                 task.cancel()
             results = await asyncio.gather(*tasks.values(), return_exceptions=True)
             hub.unsubscribe(subscription)
-        failed = False
+        failed = client_gone = False
         for name, result in zip(tasks, results, strict=True):
-            if isinstance(result, Exception):
+            if isinstance(result, _CLIENT_GONE):
+                client_gone = True
+            elif isinstance(result, Exception):
                 failed = True
                 logger.error(
                     "websocket %s failed for match %s", name, self._session.match_id, exc_info=result
                 )
+        if client_gone:
+            return
         if failed:
             code = CLOSE_INTERNAL_ERROR
         elif pump in done:
