@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 
 from tactistream.contracts import validate
+from tactistream.transport.fixtures import fixtures_dir, skeleton_fixture_path
 
 REPO = Path(__file__).parents[3]
 FIXTURE = REPO / "data" / "fixtures" / "skeleton.jsonl"
@@ -88,3 +89,14 @@ def test_events_sort_before_frames_at_equal_time(lines: list[dict[str, Any]]) ->
 def test_generator_script_reproduces_committed_fixture() -> None:
     build_lines = runpy.run_path(str(SCRIPT))["build_lines"]
     assert build_lines() == FIXTURE.read_text(encoding="utf-8").splitlines()
+
+
+def test_fixtures_dir_defaults_to_repo_data(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("TACTISTREAM_DATA_DIR", raising=False)
+    assert fixtures_dir() == REPO / "data" / "fixtures"
+
+
+def test_fixtures_dir_honours_data_dir_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("TACTISTREAM_DATA_DIR", str(tmp_path))
+    assert fixtures_dir() == tmp_path / "fixtures"
+    assert skeleton_fixture_path() == tmp_path / "fixtures" / "skeleton.jsonl"

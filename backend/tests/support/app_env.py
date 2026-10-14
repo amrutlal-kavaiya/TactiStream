@@ -46,7 +46,7 @@ class Env:
 async def app_env(bus: FeedBus | None = None) -> AsyncIterator[Env]:
     """Used inside the test body: the WS transport's task group must exit in the task that entered it."""
     clock = FakeClock()
-    app = create_app(Settings(_env_file=None), clock=clock, bus=bus or InMemoryBus(), static_dir=None)
+    app = create_app(Settings(_env_file=None, frontend_dist=None), clock=clock, bus=bus or InMemoryBus())
     async with (
         ASGIWebSocketTransport(app=app) as transport,
         httpx.AsyncClient(transport=transport, base_url="http://testserver") as client,
