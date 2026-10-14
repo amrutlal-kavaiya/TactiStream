@@ -1,0 +1,11 @@
+{
+  "_meta": { "language": "en", "status": "reviewed" },
+  "title.forward_pass": { "fan": "Forward pass", "analyst": "Forward pass" },
+  "fact.forward_pass": {
+    "fan": "{passer} played a forward pass to {receiver} ({progress} m forward).",
+    "analyst": "{passer} played a forward pass to {receiver} ({progress} m forward). Progress along attack axis: {progress} m ({progress.event_ids})."
+  },
+  "status.insufficient_tracking": "Insufficient tracking for this explanation",
+  "label.synthetic": "Synthetic",
+  "label.interpretation": "Interpretation"
+}

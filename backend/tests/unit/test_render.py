@@ -67,7 +67,7 @@ def test_missing_slot_raises(context: RenderContext) -> None:
 
 
 def test_unknown_template_raises(context: RenderContext) -> None:
-    with pytest.raises(TemplateError, match="fact.no_such_template"):
+    with pytest.raises(TemplateError, match=r"fact\.no_such_template"):
         render_claim("fact.no_such_template", SLOTS, "fan", "en", context=context)
 
 

@@ -1,0 +1,11 @@
+{
+  "title.forward_pass": { "kind": "title", "slots": {} },
+  "fact.forward_pass": {
+    "kind": "fact",
+    "slots": { "passer": "player", "receiver": "player", "progress": "metric" },
+    "precision": { "progress": 1 }
+  },
+  "status.insufficient_tracking": { "kind": "status", "slots": {} },
+  "label.synthetic": { "kind": "label", "slots": {} },
+  "label.interpretation": { "kind": "label", "slots": {} }
+}
