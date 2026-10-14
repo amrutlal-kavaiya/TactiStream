@@ -64,7 +64,19 @@ not open design questions.
   `EventHubConsumerClient.receive(on_event, starting_position=…)`), `azure-identity==1.26.0` async `DefaultAzureCredential`.
   Because `@latest` is resolved when the receive link opens, the app and the smoke start each consumer at an enqueued time of
   subscribe time minus 5 s (`enqueued_since_subscribe()`); otherwise the session's first metadata envelope, published right after
-  subscribe, can be missed. Duplicates from that window are deduped by ingest.
+  subscribe, can be missed.
+- **Residual risk of the 5 s back-off**: envelopes for the same `match_id` enqueued in the 5 s before the first Start in a process
+  (e.g. a previous process replaying the same deterministic fixture) are delivered to the new session. Dedupe is what makes them
+  harmful, not what removes them: ingest keys on `(kind, record_id)`, so a stale copy that arrives first is kept and the fresh
+  envelope with the same key is dropped. The exposure is bounded to that first Start per process (later Starts reuse the running
+  consumer). `published_ms` cannot filter them: the replayer republishes fixture records unchanged, so it is the fixture's value,
+  not the publish wall time. On a hub shared with other publishers of the same `match_id`, their envelopes interleave with the
+  session's for the whole session, not just the first 5 s; use a dedicated hub or consumer group per environment.
+- **Consumer errors**: `EventHubConsumerClient.receive()` does not raise for auth, missing-hub or missing-consumer-group errors; the
+  event processor reports them to `on_error` and retries about every 30 s. `EventHubsBus` passes `on_error` and fails the group's
+  subscribers on the first non-transient error (auth, AMQP `not-found` / `unauthorized-access` even when wrapped as
+  `ConnectionLostError`, anything else), or after more than 3 consecutive transient `ConnectionLostError`/`OperationTimeoutError`
+  reports; the session registry logs the cause and names it in the 503 `session_start_timeout` detail.
 - **Record on day one** (T051): PENDING-LIVE: run `uv run tactistream-smoke eventhubs`. Namespace: `____`; SKU: `____`;
   round-trip ms: `____`.
 
