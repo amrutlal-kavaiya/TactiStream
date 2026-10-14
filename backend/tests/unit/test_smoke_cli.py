@@ -5,6 +5,7 @@ from typer.testing import CliRunner
 
 from tactistream.settings import Settings
 from tactistream.smoke import cli
+from tactistream.smoke.eventhubs import EventHubsSmokeResult
 from tactistream.smoke.foundry import FoundrySmokeResult, SmokeError
 
 AZURE_NAMES = (
@@ -104,3 +105,40 @@ def test_foundry_failure_exits_1_without_traceback(monkeypatch: pytest.MonkeyPat
     assert f"foundry smoke failed: {error}" in result.output
     assert "Traceback" not in result.output
     assert isinstance(result.exception, SystemExit)
+
+
+def test_eventhubs_success_prints_round_trip(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EVENTHUBS_FULLY_QUALIFIED_NAMESPACE", "tactistream.servicebus.windows.net")
+    seen: dict[str, Any] = {}
+
+    async def fake_run(namespace: str, hub: str) -> EventHubsSmokeResult:
+        seen.update(namespace=namespace, hub=hub)
+        return EventHubsSmokeResult(
+            namespace=namespace, hub=hub, consumer_group="live-state", record_id="evt-123", round_trip_ms=87
+        )
+
+    monkeypatch.setattr(cli, "run_eventhubs_smoke", fake_run)
+    result = invoke("eventhubs")
+    assert result.exit_code == 0, result.output
+    assert seen == {"namespace": "tactistream.servicebus.windows.net", "hub": "tactistream-feed"}
+    for text in (
+        "namespace: tactistream.servicebus.windows.net",
+        "hub: tactistream-feed",
+        "consumer_group: live-state",
+        "record_id: evt-123 (matched)",
+        "round_trip_ms: 87",
+    ):
+        assert text in result.output
+
+
+def test_eventhubs_failure_exits_1_without_traceback(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EVENTHUBS_FULLY_QUALIFIED_NAMESPACE", "tactistream.servicebus.windows.net")
+
+    async def fake_run(namespace: str, hub: str) -> EventHubsSmokeResult:
+        raise SmokeError("envelope evt-1 not read back via live-state within 30 s")
+
+    monkeypatch.setattr(cli, "run_eventhubs_smoke", fake_run)
+    result = invoke("eventhubs")
+    assert result.exit_code == 1
+    assert "eventhubs smoke failed: envelope evt-1 not read back" in result.output
+    assert "Traceback" not in result.output
