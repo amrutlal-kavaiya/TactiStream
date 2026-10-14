@@ -23,6 +23,7 @@ export class MatchSocket {
   private reconnectTimer: ReturnType<typeof setTimeout> | undefined
   private silenceTimer: ReturnType<typeof setTimeout> | undefined
   private readonly acked = new Set<string>()
+  private readonly pendingAcks = new Map<string, ClientMessage>()
 
   constructor(options: MatchSocketOptions) {
     this.options = options
@@ -35,6 +36,7 @@ export class MatchSocket {
     ws.onopen = () => {
       if (this.connectedOnce) this.send({ type: 'resume', last_seq: this.options.getLastSeq() })
       this.connectedOnce = true
+      this.flushAcks()
       this.armWatchdog()
     }
     ws.onmessage = (event: MessageEvent<string>) => {
@@ -48,15 +50,19 @@ export class MatchSocket {
     }
   }
 
-  /** Records a fast-overlay latency sample on the server; only the first display of a target counts. */
+  /** Records a fast-overlay latency sample on the server; only the first display of a target counts.
+   * Sent once the socket is open if it is not open yet. */
   ackDisplay(targetKind: 'event' | 'insight', targetId: string, serverSeq: number) {
     const key = `${targetKind}:${targetId}`
     if (this.acked.has(key)) return
-    if (
-      this.send({ type: 'display_ack', target_kind: targetKind, target_id: targetId, server_seq: serverSeq })
-    ) {
-      this.acked.add(key)
+    this.acked.add(key)
+    const ack: ClientMessage = {
+      type: 'display_ack',
+      target_kind: targetKind,
+      target_id: targetId,
+      server_seq: serverSeq,
     }
+    if (!this.send(ack)) this.pendingAcks.set(key, ack)
   }
 
   close() {
@@ -70,6 +76,13 @@ export class MatchSocket {
     if (this.ws?.readyState !== OPEN) return false
     this.ws.send(JSON.stringify(message))
     return true
+  }
+
+  private flushAcks() {
+    for (const [key, ack] of this.pendingAcks) {
+      if (!this.send(ack)) return
+      this.pendingAcks.delete(key)
+    }
   }
 
   private armWatchdog() {

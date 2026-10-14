@@ -133,14 +133,32 @@ describe('MatchSocket', () => {
     ])
   })
 
-  it('sends display_ack later if the socket was not open yet', () => {
+  it('queues a display_ack made before the socket opens and sends it once on open', () => {
     const socket = connect()
     socket.ackDisplay('insight', 'ins-0042', 11)
-    latest().open()
     socket.ackDisplay('insight', 'ins-0042', 11)
+    expect(latest().sent).toEqual([])
+
+    latest().open()
+    const ack = { type: 'display_ack', target_kind: 'insight', target_id: 'ins-0042', server_seq: 11 }
+    expect(latest().sent).toEqual([ack])
+
+    socket.ackDisplay('insight', 'ins-0042', 11)
+    expect(latest().sent).toEqual([ack])
+  })
+
+  it('flushes a queued display_ack after resume on reconnect', () => {
+    const socket = connect()
+    latest().open()
+    lastSeq = 7
+    latest().drop()
+    socket.ackDisplay('insight', 'ins-0042', 7)
+    vi.advanceTimersByTime(500)
+    latest().open()
 
     expect(latest().sent).toEqual([
-      { type: 'display_ack', target_kind: 'insight', target_id: 'ins-0042', server_seq: 11 },
+      { type: 'resume', last_seq: 7 },
+      { type: 'display_ack', target_kind: 'insight', target_id: 'ins-0042', server_seq: 7 },
     ])
   })
 })
