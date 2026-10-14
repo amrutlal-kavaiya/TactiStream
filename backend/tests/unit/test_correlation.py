@@ -47,9 +47,11 @@ def test_config_attribute_is_passed_through(tracer: trace.Tracer, exporter: InMe
 
 
 def test_nested_spans_share_the_trace_id(tracer: trace.Tracer, exporter: InMemorySpanExporter) -> None:
-    with workflow_span("demo-blue-amber-001", "mom-0045", tracer=tracer) as trace_id:
-        with tracer.start_as_current_span("tactistream.model_call"):
-            assert current_trace_id() == trace_id
+    with (
+        workflow_span("demo-blue-amber-001", "mom-0045", tracer=tracer) as trace_id,
+        tracer.start_as_current_span("tactistream.model_call"),
+    ):
+        assert current_trace_id() == trace_id
     child, parent = exporter.get_finished_spans()
     assert child.context.trace_id == parent.context.trace_id
     assert child.parent is not None and child.parent.span_id == parent.context.span_id
