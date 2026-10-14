@@ -129,3 +129,25 @@ def test_packet_already_expired_at_now(
 ) -> None:
     assert codes(check_packet(packet, evidence, metadata, now_ms=33901)) == ["expired"]
     assert check_packet(packet, evidence, metadata, now_ms=33900) == []
+
+
+def test_number_sign_must_match_evidence(
+    packet: InsightPacket, evidence: EvidenceIndex, metadata: MatchMetadata
+) -> None:
+    negated = packet.model_copy(update={"body": FAN_EN.replace("13.1", "-13.1")})
+    failures = check_packet(negated, evidence, metadata, now_ms=3000)
+    assert codes(failures) == ["unsupported_number"]
+    assert "-13.1" in failures[0].detail
+
+
+def test_positive_text_number_does_not_match_negative_metric(
+    packet: InsightPacket, pass_event: MatchEvent, metadata: MatchMetadata
+) -> None:
+    backward = pass_event.model_copy(update={"end_m": (45.0, 28.0)})
+    index = EvidenceIndex()
+    index.add("event", backward, session_clock_ms=3000)
+    index.add("metric", compute_forward_progress(backward, metadata, state_version=5), session_clock_ms=3000)
+    body = "Blue 8 played a forward pass to Blue 11 (13.1 m forward)."
+    assert codes(check_packet(packet.model_copy(update={"body": body}), index, metadata, now_ms=3000)) == [
+        "unsupported_number"
+    ]

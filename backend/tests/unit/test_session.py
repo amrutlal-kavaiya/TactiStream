@@ -217,3 +217,29 @@ async def test_display_ack_records_fast_overlay_latency_from_receipt(world: Worl
     samples = world.latency.samples("fast_overlay")
     assert [s.ms for s in samples] == [420]
     assert samples[0].attrs["target_kind"] == "insight"
+
+
+def pass_variant(skeleton: list[FeedEnvelope], **changes: object) -> FeedEnvelope:
+    """evt-0042 re-timed to session time 0 so it is due while the session is still paused at 0."""
+    original = next(env for env in skeleton if env.record_id == "evt-0042")
+    assert isinstance(original.payload, MatchEvent)
+    timed = {"session_clock_ms": 0, "period_clock_ms": 0, **changes}
+    return original.model_copy(update={"payload": original.payload.model_copy(update=timed)})
+
+
+async def published_alone(world: World, envelope: FeedEnvelope) -> list[ServerMessage]:
+    session = await started(world)
+    sub = session.hub.subscribe()
+    await world.bus.publish(envelope)
+    await world.clock.advance(0)
+    return await drain(sub)
+
+
+@pytest.mark.parametrize(("end_m", "progress"), [((50.0, 28.0), -8.1), ((58.1, 20.0), 0.0)])
+async def test_backward_or_zero_progress_pass_gets_no_card(
+    world: World, skeleton: list[FeedEnvelope], end_m: tuple[float, float], progress: float
+) -> None:
+    messages = await published_alone(world, pass_variant(skeleton, end_m=end_m))
+    assert summary(messages) == ["event:evt-0042", "metric"]
+    metric = messages[1].payload
+    assert getattr(metric, "value", None) == progress

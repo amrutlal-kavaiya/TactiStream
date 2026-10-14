@@ -78,3 +78,13 @@ def test_incomplete_pass_is_rejected(
     attempt = pass_event.model_copy(update={"outcome": "incomplete"})
     with pytest.raises(ValueError, match="completed pass"):
         build_fact_bundle(attempt, metric, metadata, state_version=12, trace_id=TRACE, now_session_ms=3000)
+
+
+@pytest.mark.parametrize("end_x", [50.0, 58.1])
+def test_non_positive_progress_is_rejected(
+    pass_event: MatchEvent, metadata: MatchMetadata, end_x: float
+) -> None:
+    backward = pass_event.model_copy(update={"end_m": (end_x, 28.0)})
+    metric = compute_forward_progress(backward, metadata, state_version=12)
+    with pytest.raises(ValueError, match="forward progress"):
+        build_fact_bundle(backward, metric, metadata, state_version=12, trace_id=TRACE, now_session_ms=3000)
