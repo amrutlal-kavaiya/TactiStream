@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import pytest
 
 from tactistream.api import session as session_module
-from tactistream.api.session import MatchSession, SessionRegistry, UnknownScenarioError
+from tactistream.api.session import MatchSession, SessionRegistry, SessionStartError, UnknownScenarioError
 from tactistream.api.ws_hub import Subscription
 from tactistream.contracts import (
     DisplayAckMsg,
@@ -263,3 +263,16 @@ async def test_backward_pass_without_outcome_gets_no_card(world: World, skeleton
 async def test_incomplete_pass_gets_no_card(world: World, skeleton: list[FeedEnvelope]) -> None:
     variant = pass_variant(skeleton, outcome="incomplete")
     assert summary(await published_alone(world, variant)) == ["event:evt-0042"]
+
+
+class SilentBus(InMemoryBus):
+    async def publish(self, envelope: FeedEnvelope) -> None:
+        return None
+
+
+async def test_session_whose_metadata_never_arrives_is_not_registered() -> None:
+    registry = SessionRegistry(SilentBus(), FakeClock(), LatencyRecorder(), ready_timeout_s=0.05)
+    with pytest.raises(SessionStartError):
+        await registry.create("skeleton")
+    assert registry.get("demo-blue-amber-001") is None
+    await registry.aclose()

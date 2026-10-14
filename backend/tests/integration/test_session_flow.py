@@ -7,6 +7,7 @@ from httpx_ws import WebSocketDisconnect, aconnect_ws
 from httpx_ws.transport import ASGIWebSocketTransport
 from support.app_env import MATCH, WS_PATH, Message, app_env, non_frame_summary, receive, receive_until
 
+from tactistream.api import session as session_module
 from tactistream.api.app import create_app
 from tactistream.contracts import FeedEnvelope
 from tactistream.settings import Settings
@@ -167,3 +168,19 @@ async def test_duplicated_and_swapped_delivery_yields_one_card_and_the_same_stat
     noisy_events = [m["payload"]["event_id"] for m in noisy_messages if m["type"] == "event"]
     assert sorted(noisy_events) == ["evt-0040", "evt-0041", "evt-0042", "evt-0043"]
     assert [m["type"] for m in clean_messages].count("insight") == 1
+
+
+class SilentBus(InMemoryBus):
+    async def publish(self, envelope: FeedEnvelope) -> None:
+        return None
+
+
+async def test_session_start_timeout_is_503_with_error_envelope(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(session_module, "READY_TIMEOUT_S", 0.05)
+    async with app_env(SilentBus()) as env:
+        response = await env.client.post("/api/sessions", json={"scenario": "skeleton"})
+        assert response.status_code == 503
+        assert response.json()["error"] == "session_start_timeout"
+        assert set(response.json()) == {"error", "detail"}
+        missing = await env.client.post(f"/api/matches/{MATCH}/control", json={"action": "play"})
+        assert missing.status_code == 404
