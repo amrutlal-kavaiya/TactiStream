@@ -1,14 +1,18 @@
+from collections.abc import AsyncIterator
 from pathlib import Path
 
 import httpx
 import pytest
 from httpx_ws import WebSocketDisconnect, aconnect_ws
 from httpx_ws.transport import ASGIWebSocketTransport
-from support.app_env import MATCH, WS_PATH, app_env, non_frame_summary, receive, receive_until
+from support.app_env import MATCH, WS_PATH, Message, app_env, non_frame_summary, receive, receive_until
 
 from tactistream.api.app import create_app
+from tactistream.contracts import FeedEnvelope
 from tactistream.settings import Settings
+from tactistream.transport.bus import FeedBus
 from tactistream.transport.clock import FakeClock
+from tactistream.transport.memory_bus import InMemoryBus
 
 FAN_EN = "Blue 8 played a forward pass to Blue 11 (13.1 m forward)."
 
@@ -115,3 +119,51 @@ async def test_frontend_dist_is_served_when_present(tmp_path: Path) -> None:
     assert page.status_code == 200
     assert "TactiStream" in page.text
     assert health.status_code == 200
+
+
+class DuplicatingSwappingBus:
+    """Delivers every envelope twice, with each adjacent pair swapped (metadata passes straight through)."""
+
+    def __init__(self) -> None:
+        self.inner = InMemoryBus()
+        self._held: FeedEnvelope | None = None
+
+    async def publish(self, envelope: FeedEnvelope) -> None:
+        if envelope.kind == "metadata":
+            for _ in range(2):
+                await self.inner.publish(envelope)
+            return
+        if self._held is None:
+            self._held = envelope
+            return
+        first, self._held = self._held, None
+        for item in (envelope, first, first, envelope):
+            await self.inner.publish(item)
+
+    def subscribe(self, consumer_group: str) -> AsyncIterator[FeedEnvelope]:
+        return self.inner.subscribe(consumer_group)
+
+
+async def play_to_end(bus: FeedBus | None) -> tuple[list[Message], str]:
+    async with app_env(bus) as env:
+        await env.start_session()
+        async with aconnect_ws(WS_PATH, env.client) as ws:
+            await receive(ws)
+            await env.control("play")
+            await env.clock.advance(6000)
+            messages = await receive_until(
+                ws, lambda m: m["type"] == "frame" and m["payload"]["frame_index"] == 59
+            )
+        session = env.app.state.registry.get(MATCH)
+        return messages, session.state.state_hash()
+
+
+async def test_duplicated_and_swapped_delivery_yields_one_card_and_the_same_state() -> None:
+    clean_messages, clean_hash = await play_to_end(None)
+    noisy_messages, noisy_hash = await play_to_end(DuplicatingSwappingBus())
+
+    assert noisy_hash == clean_hash
+    assert [m["type"] for m in noisy_messages].count("insight") == 1
+    noisy_events = [m["payload"]["event_id"] for m in noisy_messages if m["type"] == "event"]
+    assert sorted(noisy_events) == ["evt-0040", "evt-0041", "evt-0042", "evt-0043"]
+    assert [m["type"] for m in clean_messages].count("insight") == 1

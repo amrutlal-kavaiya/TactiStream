@@ -74,7 +74,7 @@ description: "Task list for 001 walking skeleton"
 - [x] T035 [US1] Implement `backend/src/tactistream/api/app.py` (`create_app(settings, clock=None)`, `main()`), `routes_sessions.py` (`POST /api/sessions`, `POST /api/matches/{id}/control`), `routes_evidence.py`, `ws.py` (`/ws/matches/{match_id}`; handles `resume` and `display_ack` → `LatencyRecorder.record("fast_overlay", ...)`), `GET /healthz`; static mount of `frontend/dist` when present. Run T034 → green
 - [x] T036 [P] [US1] Write failing `backend/tests/integration/test_ws_resume.py`: client disconnects after seq K, reconnects with `resume{last_seq:K}` → receives snapshot whose `events` contain each event exactly once and later live messages have `seq > snapshot.seq`
 - [x] T037 [P] [US1] Write failing `backend/tests/integration/test_evidence_api.py`: `evt-0042` → 200 kind `event`; `metric-forward_progress-0042` → 200 kind `metric`; `evt-9999` → 404 `evidence_not_found`; `evt-0043` before its session time → 404
-- [ ] T038 [US1] Fix/complete implementation until T036–T037 pass; add duplicate+swap replay test to `test_session_flow.py` (bus publishes each envelope twice with adjacent swaps) asserting exactly one `insight` message (SC-004)
+- [x] T038 [US1] Fix/complete implementation until T036–T037 pass; add duplicate+swap replay test to `test_session_flow.py` (bus publishes each envelope twice with adjacent swaps) asserting exactly one `insight` message (SC-004)
 
 ### Frontend
 
