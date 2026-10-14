@@ -78,9 +78,11 @@ describe.each(themes)('%s theme contrast', (name, theme: Theme) => {
   })
 
   it('white-on-brand button text is at least 4.5:1 at rest and on hover', () => {
-    expect(contrast(theme.colorNeutralForegroundOnBrand, theme.colorBrandBackground)).toBeGreaterThanOrEqual(4.5)
-    expect(contrast(theme.colorNeutralForegroundOnBrand, theme.colorBrandBackgroundHover)).toBeGreaterThanOrEqual(
+    expect(contrast(theme.colorNeutralForegroundOnBrand, theme.colorBrandBackground)).toBeGreaterThanOrEqual(
       4.5,
     )
+    expect(
+      contrast(theme.colorNeutralForegroundOnBrand, theme.colorBrandBackgroundHover),
+    ).toBeGreaterThanOrEqual(4.5)
   })
 })

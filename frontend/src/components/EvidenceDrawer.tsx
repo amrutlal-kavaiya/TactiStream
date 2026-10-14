@@ -1,3 +1,16 @@
+import {
+  Button,
+  DrawerBody,
+  DrawerHeader,
+  DrawerHeaderTitle,
+  makeStyles,
+  MessageBar,
+  MessageBarBody,
+  OverlayDrawer,
+  Spinner,
+  tokens,
+} from '@fluentui/react-components'
+import { Dismiss24Regular } from '@fluentui/react-icons'
 import { useEffect, useEffectEvent, useId, useRef, useState } from 'react'
 
 import type { EvidenceResponse } from '../api/client'
@@ -53,9 +66,35 @@ function fieldsOf(evidence: EvidenceResponse, t: Translate): [string, string][] 
   }
 }
 
+const useStyles = makeStyles({
+  id: { fontFamily: tokens.fontFamilyMonospace },
+  fields: { margin: `0 0 ${tokens.spacingVerticalL}` },
+  row: {
+    display: 'grid',
+    gridTemplateColumns: '9rem 1fr',
+    gap: tokens.spacingHorizontalS,
+    padding: `${tokens.spacingVerticalXS} 0`,
+    borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+  },
+  term: { color: tokens.colorNeutralForeground2 },
+  value: {
+    margin: 0,
+    fontFamily: tokens.fontFamilyMonospace,
+    fontVariantNumeric: 'tabular-nums',
+    overflowWrap: 'anywhere',
+  },
+  raw: {
+    overflowX: 'auto',
+    fontFamily: tokens.fontFamilyMonospace,
+    fontSize: tokens.fontSizeBase200,
+    color: tokens.colorNeutralForeground2,
+  },
+})
+
 /** Resolves one evidence id through REST. Remount (key) per id; focus returns to the opener on unmount. */
 export function EvidenceDrawer({ evidenceId, load, onClose }: EvidenceDrawerProps) {
   const t = useT()
+  const styles = useStyles()
   const headingId = useId()
   const closeRef = useRef<HTMLButtonElement>(null)
   const [state, setState] = useState<LoadState>({ status: 'loading' })
@@ -64,9 +103,6 @@ export function EvidenceDrawer({ evidenceId, load, onClose }: EvidenceDrawerProp
     document.activeElement instanceof HTMLElement ? document.activeElement : null,
   )
   const loadEvidence = useEffectEvent((id: string) => load(id))
-  const close = useEffectEvent(() => {
-    onClose()
-  })
 
   useEffect(() => {
     let cancelled = false
@@ -83,59 +119,66 @@ export function EvidenceDrawer({ evidenceId, load, onClose }: EvidenceDrawerProp
     }
   }, [evidenceId])
 
+  // The opener stays inert until the commit that closes the drawer; this passive cleanup runs after that commit.
   useEffect(() => {
     closeRef.current?.focus()
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        close()
-      }
-    }
-    document.addEventListener('keydown', onKeyDown)
     return () => {
-      document.removeEventListener('keydown', onKeyDown)
       opener?.focus()
     }
   }, [opener])
 
   return (
-    <div className="drawer-backdrop" onClick={onClose}>
-      <section
-        className="drawer"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={headingId}
-        onClick={(event) => {
-          event.stopPropagation()
-        }}
-      >
-        <header className="drawer__header">
-          <h2 id={headingId}>
-            {t('evidence')} {evidenceId}
-          </h2>
-          <button ref={closeRef} type="button" className="button" onClick={onClose}>
-            {t('close')}
-          </button>
-        </header>
-        {state.status === 'loading' && <p role="status">{t('loadingEvidence')}</p>}
-        {state.status === 'unavailable' && <p role="alert">{t('evidenceUnavailable')}</p>}
+    <OverlayDrawer
+      open
+      position="end"
+      size="medium"
+      aria-labelledby={headingId}
+      onOpenChange={(_, data) => {
+        if (!data.open) onClose()
+      }}
+    >
+      <DrawerHeader>
+        <DrawerHeaderTitle
+          heading={{ id: headingId }}
+          action={
+            <Button
+              ref={closeRef}
+              appearance="subtle"
+              aria-label={t('close')}
+              icon={<Dismiss24Regular />}
+              onClick={onClose}
+            />
+          }
+        >
+          {t('evidence')} <span className={styles.id}>{evidenceId}</span>
+        </DrawerHeaderTitle>
+      </DrawerHeader>
+      <DrawerBody>
+        {state.status === 'loading' && (
+          <Spinner size="small" labelPosition="after" label={t('loadingEvidence')} />
+        )}
+        {state.status === 'unavailable' && (
+          <MessageBar intent="warning" role="alert">
+            <MessageBarBody>{t('evidenceUnavailable')}</MessageBarBody>
+          </MessageBar>
+        )}
         {state.status === 'ready' && (
           <>
-            <dl className="fields">
+            <dl className={styles.fields}>
               {fieldsOf(state.evidence, t).map(([term, value]) => (
-                <div key={term} className="fields__row">
-                  <dt>{term}</dt>
-                  <dd>{value}</dd>
+                <div key={term} className={styles.row}>
+                  <dt className={styles.term}>{term}</dt>
+                  <dd className={styles.value}>{value}</dd>
                 </div>
               ))}
             </dl>
             <details>
               <summary>{t('rawRecord')}</summary>
-              <pre>{JSON.stringify(state.evidence.record, null, 2)}</pre>
+              <pre className={styles.raw}>{JSON.stringify(state.evidence.record, null, 2)}</pre>
             </details>
           </>
         )}
-      </section>
-    </div>
+      </DrawerBody>
+    </OverlayDrawer>
   )
 }

@@ -88,15 +88,18 @@ describe('brand theme', () => {
   it.each([
     ['dark', darkTheme, createDarkTheme],
     ['light', lightTheme, createLightTheme],
-  ] as const)('builds the %s theme from the Fluent factory, overriding only brand tokens', (_, theme, factory) => {
-    const base = factory(brandRamp)
-    expect(Object.keys(theme).sort()).toEqual(Object.keys(base).sort())
-    const overridden = Object.keys(base).filter(
-      (k) => theme[k as keyof typeof theme] !== base[k as keyof typeof base],
-    )
-    expect(overridden.length).toBeGreaterThan(0)
-    for (const key of overridden) expect(key).toMatch(/^color(Compound)?Brand/)
-  })
+  ] as const)(
+    'builds the %s theme from the Fluent factory, overriding only brand tokens',
+    (_, theme, factory) => {
+      const base = factory(brandRamp)
+      expect(Object.keys(theme).sort()).toEqual(Object.keys(base).sort())
+      const overridden = Object.keys(base).filter(
+        (k) => theme[k as keyof typeof theme] !== base[k as keyof typeof base],
+      )
+      expect(overridden.length).toBeGreaterThan(0)
+      for (const key of overridden) expect(key).toMatch(/^color(Compound)?Brand/)
+    },
+  )
 })
 
 describe('AppShell', () => {

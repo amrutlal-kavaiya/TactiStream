@@ -28,6 +28,8 @@ export interface MatchState {
   insightSeq: Record<string, number>
   activeInsightId: string | null
   playback: Playback | null
+  /** The match socket is open. */
+  connected: boolean
   sessionClockMs: number
   lastSeq: number
   prefs: Prefs
@@ -38,6 +40,8 @@ export interface MatchActions {
   applySnapshot: (message: ServerMessage) => void
   applyMessage: (message: ServerMessage) => void
   setPrefs: (prefs: Prefs) => void
+  setConnected: (connected: boolean) => void
+  setPlayback: (playback: Playback) => void
   variantFor: (prefs: Prefs) => InsightPacket | null
 }
 
@@ -54,6 +58,7 @@ const emptyMatch = (matchId: string | null): MatchData => ({
   insightSeq: {},
   activeInsightId: null,
   playback: null,
+  connected: false,
   sessionClockMs: 0,
   lastSeq: 0,
 })
@@ -159,6 +164,14 @@ export const createMatchStore = () =>
 
     setPrefs: (prefs) => {
       set({ prefs })
+    },
+
+    setConnected: (connected) => {
+      set({ connected })
+    },
+
+    setPlayback: (playback) => {
+      set({ playback })
     },
 
     variantFor: (prefs) => {
