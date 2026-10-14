@@ -3,50 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MatchSocket } from '../../src/api/socket'
 import type { ServerMessage } from '../../src/contracts/generated'
 import { heartbeat } from './fixtures'
+import { MockWebSocket } from './mockWebSocket'
 
-class MockWebSocket {
-  static instances: MockWebSocket[] = []
-  url: string
-  readyState = 0
-  sent: unknown[] = []
-  onopen: (() => void) | null = null
-  onmessage: ((event: { data: string }) => void) | null = null
-  onclose: ((event: { code: number }) => void) | null = null
-  onerror: (() => void) | null = null
-
-  constructor(url: string) {
-    this.url = url
-    MockWebSocket.instances.push(this)
-  }
-
-  send(data: string) {
-    this.sent.push(JSON.parse(data))
-  }
-
-  close() {
-    this.readyState = 3
-  }
-
-  open() {
-    this.readyState = 1
-    this.onopen?.()
-  }
-
-  receive(message: ServerMessage) {
-    this.onmessage?.({ data: JSON.stringify(message) })
-  }
-
-  drop(code = 1006) {
-    this.readyState = 3
-    this.onclose?.({ code })
-  }
-}
-
-const latest = () => {
-  const ws = MockWebSocket.instances.at(-1)
-  if (!ws) throw new Error('no socket created')
-  return ws
-}
+const latest = () => MockWebSocket.latest()
 
 let received: ServerMessage[]
 let lastSeq: number
