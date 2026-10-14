@@ -16,6 +16,7 @@ bus → state, state → agents, agents → UI, recap → studio graphics. Const
 | `recap.schema.json` | recap builder | UI, export |
 | `feed_envelope.schema.json` | any FeedBus publisher | Event Hubs consumers, Fabric Eventstream |
 | `ws_message.schema.json` | API WebSocket | frontend |
+| `latency_sample.schema.json` | `LatencyRecorder` (API), 008 runners | App Insights logs, Fabric `Latency`, 008 |
 
 Rules:
 
