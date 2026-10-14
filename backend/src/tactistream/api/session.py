@@ -185,6 +185,8 @@ class MatchSession:
         metric = compute_forward_progress(event, metadata, self.state.state_version)
         self.evidence.add("metric", metric, event.session_clock_ms)
         self.hub.broadcast("metric", metric, server_receipt_ms=receipt)
+        if metric.value is None or metric.value <= 0:
+            return
         moment_id = f"mom-{event.sequence:04d}"
         try:
             bundle = build_fact_bundle(event, metric, metadata, self.state.state_version, trace_id, now_ms)

@@ -35,6 +35,8 @@ def build_fact_bundle(
     """`fact.forward_pass` in every (mode, language), shown from the end of the pass for 6 s."""
     if event.event_type != "pass" or event.outcome != "complete" or event.recipient_id is None:
         raise ValueError(f"fact.forward_pass needs a completed pass, got {event.event_id}")
+    if metric.value is None or metric.value <= 0:
+        raise ValueError(f"fact.forward_pass needs positive forward progress, got {metric.value}")
     slots = {
         "passer": SlotValue(kind="player", player_id=event.player_id),
         "receiver": SlotValue(kind="player", player_id=event.recipient_id),

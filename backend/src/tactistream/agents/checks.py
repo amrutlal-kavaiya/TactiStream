@@ -15,7 +15,7 @@ CheckCode = Literal[
 ]
 
 _EVIDENCE_TOKEN = re.compile(r"\b(?:evt-\d{4,}|frm-\d{6,}|metric-[a-z_]+-\d{4,}(?:-(?:blue|amber)-\d{2})?)\b")
-_NUMBER = re.compile(r"(?<![\w.])\d+(?:\.\d+)?(?!\d)")
+_NUMBER = re.compile(r"(?<![\w.-])-?\d+(?:\.\d+)?(?!\d)")
 
 
 @dataclass(frozen=True)
@@ -115,4 +115,4 @@ def _numbers(entries: Iterable[EvidenceEntry]) -> list[float]:
 
 def _supported(number: str, allowed: Iterable[float]) -> bool:
     decimals = len(number.split(".", 1)[1]) if "." in number else 0
-    return any(f"{abs(value):.{decimals}f}" == number for value in allowed)
+    return any(f"{value:.{decimals}f}" == number for value in allowed)
