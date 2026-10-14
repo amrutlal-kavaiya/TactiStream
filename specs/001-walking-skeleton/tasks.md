@@ -39,7 +39,7 @@ description: "Task list for 001 walking skeleton"
 - [x] T013 [P] Implement `backend/src/tactistream/transport/clock.py` (`Clock` protocol, `MonotonicClock`, `FakeClock`)
 - [x] T014 [P] Write failing `backend/tests/unit/test_memory_bus.py`: two consumer groups each receive all envelopes in publish order per match; a group subscribing late receives only later envelopes; a duplicate publish is delivered twice (at-least-once — dedupe is ingest's job)
 - [x] T015 [P] Implement `backend/src/tactistream/transport/bus.py` (`FeedBus` protocol) and `memory_bus.py` (`InMemoryBus` with per-group `asyncio.Queue`s; `close()` ends iterators)
-- [ ] T016 [P] Implement `backend/src/tactistream/settings.py` (`Settings` via pydantic-settings reading the `.env.example` names; `bus: Literal["memory","eventhubs"]`, `agents: Literal["off","scripted","foundry"]`) with `backend/tests/unit/test_settings.py` covering defaults and env override
+- [x] T016 [P] Implement `backend/src/tactistream/settings.py` (`Settings` via pydantic-settings reading the `.env.example` names; `bus: Literal["memory","eventhubs"]`, `agents: Literal["off","scripted","foundry"]`) with `backend/tests/unit/test_settings.py` covering defaults and env override
 - [ ] T017 [P] Implement `backend/src/tactistream/telemetry/otel.py` (`setup_telemetry(settings)`: Azure Monitor if connection string set, else no-op) and `telemetry/latency.py` (`LatencyRecorder.record(kind: Literal["fast_overlay","narrative"], ms: int, attrs)` storing samples in memory + OTel histogram; `percentile(kind, p)`), with `backend/tests/unit/test_latency.py` (p95 of 1..100 == 95)
 
 **Checkpoint**: contracts green, bus + clock tested.
