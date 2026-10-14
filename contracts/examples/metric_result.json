@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "match_id": "demo-blue-amber-001",
+  "metric_id": "metric-channel-0042",
+  "kind": "channel",
+  "definition_version": "channel.v1",
+  "status": "ok",
+  "value": 3.4,
+  "unit": "m",
+  "components": { "clearance_before_m": 1.9, "clearance_at_pass_m": 5.3 },
+  "subject_ids": ["blue-08", "blue-11"],
+  "window": { "start_ms": 38300, "end_ms": 42300 },
+  "inputs": { "event_ids": ["evt-0042"], "frame_ids": ["frm-000383", "frm-000423"], "excluded_count": 0 },
+  "params": { "lookback_ms": 4000 },
+  "limitation_key": "limitation.channel",
+  "state_version": 466
+}

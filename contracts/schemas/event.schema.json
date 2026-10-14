@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tactistream.dev/contracts/event.schema.json",
+  "title": "MatchEvent",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "match_id",
+    "event_id",
+    "sequence",
+    "period",
+    "period_clock_ms",
+    "session_clock_ms",
+    "event_type",
+    "team_id",
+    "player_id",
+    "start_m",
+    "outcome",
+    "source"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
+    "match_id": { "$ref": "common.schema.json#/$defs/MatchId" },
+    "event_id": { "$ref": "common.schema.json#/$defs/EventId" },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "period": { "type": "integer", "minimum": 1, "maximum": 2 },
+    "period_clock_ms": { "$ref": "common.schema.json#/$defs/Milliseconds" },
+    "session_clock_ms": { "$ref": "common.schema.json#/$defs/Milliseconds" },
+    "event_type": {
+      "enum": [
+        "kickoff",
+        "pass",
+        "carry",
+        "pressure",
+        "tackle",
+        "interception",
+        "ball_recovery",
+        "shot",
+        "clearance",
+        "out_of_play",
+        "period_end"
+      ]
+    },
+    "team_id": { "$ref": "common.schema.json#/$defs/TeamId" },
+    "player_id": { "$ref": "common.schema.json#/$defs/PlayerId" },
+    "recipient_id": { "$ref": "common.schema.json#/$defs/PlayerId" },
+    "start_m": { "$ref": "common.schema.json#/$defs/PointM" },
+    "end_m": { "$ref": "common.schema.json#/$defs/PointM" },
+    "duration_ms": { "$ref": "common.schema.json#/$defs/Milliseconds" },
+    "outcome": {
+      "enum": ["complete", "incomplete", "on_target", "off_target", "blocked", "goal", "won", "lost", null]
+    },
+    "related_event_ids": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/EventId" } },
+    "source": { "$ref": "common.schema.json#/$defs/Provenance" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "event_type": { "const": "pass" } } },
+      "then": { "required": ["end_m", "duration_ms"] }
+    },
+    {
+      "if": { "properties": { "event_type": { "const": "pass" }, "outcome": { "const": "complete" } } },
+      "then": { "required": ["recipient_id"] }
+    },
+    {
+      "if": { "properties": { "event_type": { "enum": ["carry", "shot"] } } },
+      "then": { "required": ["end_m"] }
+    }
+  ]
+}

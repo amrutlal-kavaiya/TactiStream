@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tactistream.dev/contracts/tracking_frame.schema.json",
+  "title": "TrackingFrame",
+  "description": "One 10 Hz snapshot of player and ball positions. Unavailable entities carry visible=false and no position; positions are never fabricated.",
+  "type": "object",
+  "required": ["schema_version", "match_id", "frame_id", "frame_index", "period", "period_clock_ms", "session_clock_ms", "players", "ball", "source"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
+    "match_id": { "$ref": "common.schema.json#/$defs/MatchId" },
+    "frame_id": { "$ref": "common.schema.json#/$defs/FrameId" },
+    "frame_index": { "type": "integer", "minimum": 0 },
+    "period": { "type": "integer", "minimum": 1, "maximum": 2 },
+    "period_clock_ms": { "$ref": "common.schema.json#/$defs/Milliseconds" },
+    "session_clock_ms": { "$ref": "common.schema.json#/$defs/Milliseconds" },
+    "players": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["player_id", "visible"],
+        "additionalProperties": false,
+        "properties": {
+          "player_id": { "$ref": "common.schema.json#/$defs/PlayerId" },
+          "visible": { "type": "boolean" },
+          "pos_m": { "$ref": "common.schema.json#/$defs/PointM" }
+        },
+        "if": { "properties": { "visible": { "const": true } } },
+        "then": { "required": ["pos_m"] },
+        "else": { "not": { "required": ["pos_m"] } }
+      }
+    },
+    "ball": {
+      "type": "object",
+      "required": ["visible"],
+      "additionalProperties": false,
+      "properties": {
+        "visible": { "type": "boolean" },
+        "pos_m": { "$ref": "common.schema.json#/$defs/PointM" },
+        "height_m": { "type": "number", "minimum": 0, "maximum": 30 }
+      },
+      "if": { "properties": { "visible": { "const": true } } },
+      "then": { "required": ["pos_m"] },
+      "else": { "not": { "required": ["pos_m"] } }
+    },
+    "source": { "$ref": "common.schema.json#/$defs/Provenance" }
+  }
+}

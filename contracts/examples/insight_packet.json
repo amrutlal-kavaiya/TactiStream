@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "insight_id": "ins-0045",
+  "insight_version": 1,
+  "match_id": "demo-blue-amber-001",
+  "moment_id": "mom-0045",
+  "state_version": 512,
+  "as_of_session_ms": 46500,
+  "mode": "fan",
+  "language": "en",
+  "source_kind": "synthetic",
+  "claim_status": "interpretation_supported",
+  "title": "Space opened before the shot",
+  "body": "Blue 9's run helped create room for the pass.",
+  "labels": ["synthetic", "interpretation"],
+  "evidence_ids": ["evt-0042", "metric-channel-0042", "metric-defender_follow-0042"],
+  "claim_ids": ["clm-0045-2"],
+  "render": {
+    "clock": "session_clock_ms",
+    "show_from_ms": 47000,
+    "show_until_ms": 53000,
+    "priority": 2,
+    "panel": "lower_third",
+    "annotations": ["highlight_blue_09", "path_amber_04", "show_channel_0042"],
+    "replay_window": { "start_ms": 36000, "end_ms": 46500 }
+  },
+  "expires_at_session_ms": 76500,
+  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736"
+}
