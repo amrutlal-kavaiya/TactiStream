@@ -18,6 +18,7 @@ class Subscription:
     def __init__(self, maxsize: int) -> None:
         self._queue: asyncio.Queue[ServerMessage | None] = asyncio.Queue(maxsize=maxsize)
         self.closed = False
+        self.overflowed = False
 
     async def get(self) -> ServerMessage | None:
         if self.closed and self._queue.empty():
@@ -30,6 +31,7 @@ class Subscription:
         try:
             self._queue.put_nowait(message)
         except asyncio.QueueFull:
+            self.overflowed = True
             self.close()
             return False
         return True

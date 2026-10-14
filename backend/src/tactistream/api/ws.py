@@ -22,6 +22,8 @@ router = APIRouter()
 
 HEARTBEAT_MS = 10_000
 CLOSE_UNKNOWN_MATCH = 4404
+CLOSE_GOING_AWAY = 1001
+CLOSE_INTERNAL_ERROR = 1011
 CLOSE_TOO_SLOW = 1013
 
 
@@ -52,16 +54,29 @@ class MatchConnection:
         receiver = asyncio.create_task(self._receive_loop())
         pump = asyncio.create_task(self._pump(subscription))
         heartbeat = asyncio.create_task(self._heartbeat())
+        tasks = {"receiver": receiver, "pump": pump, "heartbeat": heartbeat}
         try:
             done, _ = await asyncio.wait({receiver, pump}, return_when=asyncio.FIRST_COMPLETED)
         finally:
-            for task in (receiver, pump, heartbeat):
+            for task in tasks.values():
                 task.cancel()
-            await asyncio.gather(receiver, pump, heartbeat, return_exceptions=True)
+            results = await asyncio.gather(*tasks.values(), return_exceptions=True)
             hub.unsubscribe(subscription)
-        if pump in done:
-            with contextlib.suppress(Exception):
-                await self._ws.close(code=CLOSE_TOO_SLOW)
+        failed = False
+        for name, result in zip(tasks, results, strict=True):
+            if isinstance(result, Exception):
+                failed = True
+                logger.error(
+                    "websocket %s failed for match %s", name, self._session.match_id, exc_info=result
+                )
+        if failed:
+            code = CLOSE_INTERNAL_ERROR
+        elif pump in done:
+            code = CLOSE_TOO_SLOW if subscription.overflowed else CLOSE_GOING_AWAY
+        else:
+            return
+        with contextlib.suppress(Exception):
+            await self._ws.close(code=code)
 
     async def _send(self, message: ServerMessage) -> None:
         await self._ws.send_text(json.dumps(message.model_dump(mode="json", exclude_none=True)))
