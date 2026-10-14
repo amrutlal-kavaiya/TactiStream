@@ -4,10 +4,10 @@ SHELL := /bin/bash
 BACKEND := backend
 FRONTEND := frontend
 
-.PHONY: help install dev test e2e lint contracts smoke
+.PHONY: help install dev test e2e lint contracts smoke image image-smoke
 
 help:
-	@echo "Targets: install dev test e2e lint contracts smoke"
+	@echo "Targets: install dev test e2e lint contracts smoke image image-smoke"
 
 install:
 	cd $(BACKEND) && uv sync
@@ -39,3 +39,17 @@ contracts:
 smoke:
 	cd $(BACKEND) && uv run tactistream-smoke foundry
 	cd $(BACKEND) && uv run tactistream-smoke eventhubs
+
+IMAGE ?= tactistream:local
+SMOKE_CONTAINER := tactistream-image-smoke
+
+image:
+	docker build -t $(IMAGE) .
+
+image-smoke:
+	@docker rm -f $(SMOKE_CONTAINER) >/dev/null 2>&1 || true
+	docker run -d --rm --name $(SMOKE_CONTAINER) -p 8000:8000 -e TACTISTREAM_BUS=memory $(IMAGE) >/dev/null
+	@trap 'docker stop $(SMOKE_CONTAINER) >/dev/null 2>&1 || true' EXIT; \
+	for i in $$(seq 1 60); do curl -fsS http://127.0.0.1:8000/healthz >/dev/null 2>&1 && break; sleep 0.5; done; \
+	cd $(BACKEND) && uv run tactistream-smoke deployed --base-url http://127.0.0.1:8000 --allow-memory && \
+	curl -fsS http://127.0.0.1:8000/ | grep -qi '<html' && echo "SPA index served"
