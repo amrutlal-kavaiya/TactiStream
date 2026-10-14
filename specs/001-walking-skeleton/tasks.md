@@ -109,7 +109,7 @@ description: "Task list for 001 walking skeleton"
 ## Phase 5: User Story 3 — Contract-first CI (P2)
 
 - [x] T052 [US3] Extend `.github/workflows/ci.yml`: job `contracts` (backend contract tests + `npm run contracts:gen` + `git diff --exit-code`), job `e2e` (install Playwright chromium, build frontend, run `npm run e2e`), cache uv and npm; all jobs on push and PR to `main` (push widened to every branch; `contracts` runs `make contracts`)
-- [ ] T053 [US3] On a throwaway branch rename `MatchEvent.player_id` → `actor_id`; confirm CI fails in `contracts`; delete branch; note the run URL in the PR description (SC-005)
+- [ ] T053 [US3] On a throwaway branch rename `MatchEvent.player_id` → `actor_id`; confirm CI fails in `contracts`; delete branch; note the run URL in the PR description (SC-005) — (local proof done; GitHub run URL pending first push)
 
 ---
 
