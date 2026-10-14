@@ -19,7 +19,7 @@ This folder is the single source of truth for **what** we build (spec.md), **how
 
 | # | Feature | Dates | Exit condition (binding) |
 |---|---|---|---|
-| 001 | [walking-skeleton](001-walking-skeleton/spec.md) | 14 Oct | One synthetic pass reaches the browser over WebSocket with a verified factual card; its evidence reference opens; one real Foundry call and one Event Hubs round-trip succeed; CI green |
+| 001 | [walking-skeleton](001-walking-skeleton/spec.md) | 14 Oct | One synthetic pass reaches the browser over WebSocket with a verified factual card; its evidence reference opens; one real Foundry call and one Event Hubs round-trip succeed; CI green. **Status 14 Oct:** card + evidence met (e2e green, fresh-clone quickstart passes); pending: Foundry/Event Hubs smoke (T050–T051), first GitHub CI run (T053) |
 | 002 | [synthetic-simulator](002-synthetic-simulator/spec.md) | 14–15 Oct | Seeded, deterministic event + 10 Hz tracking streams for 3 scenario families + 3 negatives + missing-data fixture; replay at 1× with pause/reset/new seed |
 | 003 | [live-state-metrics](003-live-state-metrics/spec.md) | 15 Oct | Ingest dedupes/reorders; metrics are explainable with event/frame references; candidate moments detected; reconnect resumes from last seq |
 | 007a | [azure-platform](007-azure-platform/spec.md) US1–US2 | 15 Oct | Skeleton deployed to Container Apps reading from Event Hubs; telemetry in Application Insights |
