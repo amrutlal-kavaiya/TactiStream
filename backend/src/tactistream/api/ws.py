@@ -33,10 +33,10 @@ async def match_socket(websocket: WebSocket, match_id: str) -> None:
         await websocket.close(code=CLOSE_UNKNOWN_MATCH)
         return
     await websocket.accept()
-    await _Connection(websocket, session, websocket.app.state.clock).run()
+    await MatchConnection(websocket, session, websocket.app.state.clock).run()
 
 
-class _Connection:
+class MatchConnection:
     def __init__(self, websocket: WebSocket, session: MatchSession, clock: Clock) -> None:
         self._ws = websocket
         self._session = session
