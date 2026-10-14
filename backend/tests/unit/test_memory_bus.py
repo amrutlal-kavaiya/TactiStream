@@ -47,7 +47,12 @@ async def test_each_consumer_group_receives_all_envelopes_in_publish_order() -> 
     bus: FeedBus = InMemoryBus()
     live = bus.subscribe("live-state")
     fabric = bus.subscribe("fabric")
-    published = [envelope("match-a", 1), envelope("match-b", 1), envelope("match-a", 2), envelope("match-b", 2)]
+    published = [
+        envelope("match-a", 1),
+        envelope("match-b", 1),
+        envelope("match-a", 2),
+        envelope("match-b", 2),
+    ]
     for env in published:
         await bus.publish(env)
 

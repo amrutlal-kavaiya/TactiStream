@@ -50,7 +50,11 @@ def test_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_every_env_example_name_is_read(monkeypatch: pytest.MonkeyPatch) -> None:
-    values = {"TACTISTREAM_BUS": "eventhubs", "TACTISTREAM_AGENTS": "foundry", "TACTISTREAM_NARRATIVE_DEADLINE_MS": "1"}
+    values = {
+        "TACTISTREAM_BUS": "eventhubs",
+        "TACTISTREAM_AGENTS": "foundry",
+        "TACTISTREAM_NARRATIVE_DEADLINE_MS": "1",
+    }
     for name in example_names():
         monkeypatch.setenv(name, values.get(name, f"v-{name.lower()}"))
     dumped = {str(v) for v in Settings(_env_file=None).model_dump().values()}

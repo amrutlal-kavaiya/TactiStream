@@ -22,8 +22,12 @@ class Settings(BaseSettings):
     )
 
     bus: Literal["memory", "eventhubs"] = Field(default="memory", validation_alias="TACTISTREAM_BUS")
-    agents: Literal["off", "scripted", "foundry"] = Field(default="off", validation_alias="TACTISTREAM_AGENTS")
-    narrative_deadline_ms: int = Field(default=8000, gt=0, validation_alias="TACTISTREAM_NARRATIVE_DEADLINE_MS")
+    agents: Literal["off", "scripted", "foundry"] = Field(
+        default="off", validation_alias="TACTISTREAM_AGENTS"
+    )
+    narrative_deadline_ms: int = Field(
+        default=8000, gt=0, validation_alias="TACTISTREAM_NARRATIVE_DEADLINE_MS"
+    )
 
     eventhubs_fully_qualified_namespace: str | None = None
     eventhubs_name: str = "tactistream-feed"
