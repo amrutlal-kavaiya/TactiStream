@@ -32,6 +32,7 @@ def test_defaults() -> None:
     assert s.azure_storage_account_url is None
     assert s.fabric_kusto_query_uri is None
     assert s.fabric_kusto_database is None
+    assert s.azure_location is None
     assert s.narrative_deadline_ms == 8000
 
 
