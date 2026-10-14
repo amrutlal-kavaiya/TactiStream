@@ -17,6 +17,8 @@ dependencies = [
     "azure-monitor-opentelemetry",
     "opentelemetry-sdk",
     "typer",
+    "agent-framework-core==1.21.0",
+    "agent-framework-foundry==1.14.1",
 ]
 
 [project.scripts]

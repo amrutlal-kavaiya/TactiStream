@@ -279,6 +279,46 @@ async def test_session_whose_metadata_never_arrives_is_not_registered() -> None:
     await registry.aclose()
 
 
+class FailingBus(SilentBus):
+    def __init__(self) -> None:
+        super().__init__()
+        self.groups: list[str] = []
+
+    def subscribe(self, consumer_group: str) -> AsyncIterator[FeedEnvelope]:
+        self.groups.append(consumer_group)
+        return self._fail()
+
+    @staticmethod
+    async def _fail() -> AsyncIterator[FeedEnvelope]:
+        raise PermissionError("unauthorized: missing Data Receiver role")
+        yield
+
+
+async def test_consumer_failure_is_logged_and_named_in_the_start_error(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    bus = FailingBus()
+    registry = SessionRegistry(bus, FakeClock(), LatencyRecorder(), ready_timeout_s=0.05)
+    with pytest.raises(SessionStartError, match="PermissionError: unauthorized: missing Data Receiver role"):
+        await registry.create("skeleton")
+    assert "live-state consumer failed: PermissionError: unauthorized" in caplog.text
+    with pytest.raises(SessionStartError, match="PermissionError"):
+        await registry.create("skeleton")
+    assert bus.groups == ["live-state", "live-state"]
+    await registry.aclose()
+
+
+async def test_consumer_group_is_configurable() -> None:
+    bus = FailingBus()
+    registry = SessionRegistry(
+        bus, FakeClock(), LatencyRecorder(), ready_timeout_s=0.05, consumer_group="live-state-b"
+    )
+    with pytest.raises(SessionStartError):
+        await registry.create("skeleton")
+    assert bus.groups == ["live-state-b"]
+    await registry.aclose()
+
+
 async def test_concurrent_creates_share_one_start(world: World) -> None:
     async def create_ready() -> tuple[MatchSession, bool]:
         session = await world.registry.create("skeleton")

@@ -223,7 +223,7 @@ class MatchSession:
 
 
 class SessionRegistry:
-    """In-memory sessions keyed by match_id, fed by one `live-state` consumer for the whole process."""
+    """In-memory sessions keyed by match_id, fed by one consumer (default group `live-state`) per process."""
 
     def __init__(
         self,
@@ -233,8 +233,10 @@ class SessionRegistry:
         wall_ms: WallClock = wall_clock_ms,
         ready_timeout_s: float | None = None,
         data_dir: Path | None = None,
+        consumer_group: str = LIVE_STATE_GROUP,
     ) -> None:
         self._bus = bus
+        self._consumer_group = consumer_group
         self._data_dir = data_dir
         self._ready_timeout_s = ready_timeout_s
         self._clock = clock
@@ -243,6 +245,7 @@ class SessionRegistry:
         self._sessions: dict[str, MatchSession] = {}
         self._create_locks: dict[str, asyncio.Lock] = {}
         self._consumer: asyncio.Task[None] | None = None
+        self._consumer_failure: Exception | None = None
 
     def get(self, match_id: str) -> MatchSession | None:
         return self._sessions.get(match_id)
@@ -267,15 +270,22 @@ class SessionRegistry:
             if existing is not None:
                 await existing.reset()
                 return existing
-            if self._consumer is None:
-                self._consumer = asyncio.create_task(self._consume(self._bus.subscribe(LIVE_STATE_GROUP)))
+            if self._consumer is None or self._consumer.done():
+                self._consumer_failure = None
+                stream = self._bus.subscribe(self._consumer_group)
+                self._consumer = asyncio.create_task(self._consume(stream))
             session = MatchSession(records, self._bus, self._clock, self._wall_ms, self._latency)
             self._sessions[match_id] = session
             try:
                 await session.start(self._ready_timeout_s or READY_TIMEOUT_S)
-            except SessionStartError:
+            except SessionStartError as exc:
                 del self._sessions[match_id]
                 await session.aclose()
+                failure = self._consumer_failure
+                if failure is not None:
+                    raise SessionStartError(
+                        f"{exc}; {self._consumer_group} consumer failed: {type(failure).__name__}: {failure}"
+                    ) from failure
                 raise
             return session
 
@@ -290,11 +300,15 @@ class SessionRegistry:
             self._consumer = None
 
     async def _consume(self, stream: AsyncIterator[FeedEnvelope]) -> None:
-        async for envelope in stream:
-            session = self._sessions.get(envelope.match_id)
-            if session is None:
-                continue
-            try:
-                session.ingest(envelope)
-            except Exception:
-                logger.exception("ingest failed for %s/%s", envelope.kind, envelope.record_id)
+        try:
+            async for envelope in stream:
+                session = self._sessions.get(envelope.match_id)
+                if session is None:
+                    continue
+                try:
+                    session.ingest(envelope)
+                except Exception:
+                    logger.exception("ingest failed for %s/%s", envelope.kind, envelope.record_id)
+        except Exception as exc:
+            self._consumer_failure = exc
+            logger.error("%s consumer failed: %s: %s", self._consumer_group, type(exc).__name__, exc)
