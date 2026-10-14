@@ -117,10 +117,10 @@ export const createMatchStore = () =>
           const ev = message.payload
           if (state.events.some((e) => e.event_id === ev.event_id)) {
             set({ lastSeq })
-            return
+            break
           }
           set({ events: [...state.events, ev], sessionClockMs: clock(ev.session_clock_ms), lastSeq })
-          return
+          break
         }
         case 'frame':
           set({
@@ -128,7 +128,7 @@ export const createMatchStore = () =>
             sessionClockMs: clock(message.payload.session_clock_ms),
             lastSeq,
           })
-          return
+          break
         case 'insight': {
           const bundle = message.payload
           const current = state.activeInsightId ? state.insights[state.activeInsightId] : undefined
@@ -140,15 +140,20 @@ export const createMatchStore = () =>
               : state.activeInsightId,
             lastSeq,
           })
-          return
+          break
         }
         case 'heartbeat': {
           const ms = message.payload.session_clock_ms
           set(typeof ms === 'number' ? { sessionClockMs: clock(ms), lastSeq } : { lastSeq })
-          return
+          break
         }
         default:
           set({ lastSeq })
+      }
+      const next = get()
+      const active = next.activeInsightId ? next.insights[next.activeInsightId] : undefined
+      if (active && isExpired(active, next.sessionClockMs)) {
+        set({ activeInsightId: pickActive(Object.values(next.insights), next.sessionClockMs) })
       }
     },
 

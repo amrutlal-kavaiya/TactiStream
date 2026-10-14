@@ -91,6 +91,33 @@ describe('applyMessage', () => {
   })
 })
 
+describe('expiry', () => {
+  beforeEach(() => {
+    store.getState().applySnapshot(snapshot(10))
+  })
+
+  it('promotes the best unexpired insight when the active one expires', () => {
+    const s = store.getState()
+    s.applyMessage(insightMessage(11, insight('ins-a', { priority: 1, expiresAt: 4000 })))
+    s.applyMessage(insightMessage(12, insight('ins-b', { priority: 3 })))
+    s.applyMessage(insightMessage(13, insight('ins-c', { priority: 5 })))
+    expect(store.getState().activeInsightId).toBe('ins-a')
+
+    s.applyMessage(heartbeat(13, 5000))
+
+    expect(store.getState().activeInsightId).toBe('ins-b')
+    expect(store.getState().variantFor({ mode: 'fan', language: 'en' })?.insight_id).toBe('ins-b')
+  })
+
+  it('clears the active insight once every insight has expired', () => {
+    const s = store.getState()
+    s.applyMessage(insightMessage(11, insight('ins-a', { expiresAt: 4000 })))
+    s.applyMessage(heartbeat(11, 5000))
+
+    expect(store.getState().activeInsightId).toBeNull()
+  })
+})
+
 describe('variantFor', () => {
   it('returns the active packet matching mode and language', () => {
     store.getState().applyMessage(insightMessage(11, insight('ins-0042')))
