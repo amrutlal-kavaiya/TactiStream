@@ -16,6 +16,7 @@ from numpy.typing import NDArray
 
 from tactistream.contracts import MatchEvent, TrackingFrame
 from tactistream.simulator.config import VARIANTS, SimulationConfig
+from tactistream.simulator.engine import simulate
 from tactistream.simulator.possession import IllegalTransition, PossessionState, is_turnover, transition
 
 Point = tuple[float, float]
@@ -370,8 +371,6 @@ def _strip(record: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def check_tracking_gap(output: Any, label_window: Window) -> list[str]:
-    from tactistream.simulator.engine import simulate
-
     failures: list[str] = []
     gaps = output.manifest.tracking_gaps
     if not gaps:
