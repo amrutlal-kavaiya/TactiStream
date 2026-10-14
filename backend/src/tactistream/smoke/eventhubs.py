@@ -7,15 +7,13 @@ import secrets
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from tactistream.contracts import FeedEnvelope, MatchEvent, Provenance
 from tactistream.smoke.foundry import SmokeError
-from tactistream.transport.eventhubs_bus import EventHubsBus, EventHubsClientFactory
+from tactistream.transport.eventhubs_bus import EventHubsBus, EventHubsClientFactory, enqueued_since_subscribe
 
 SMOKE_MATCH_ID = "smoke-check"
-START_MARGIN = timedelta(seconds=5)
 
 
 @dataclass(frozen=True)
@@ -82,7 +80,7 @@ async def _round_trip(
     timeout_s: float,
 ) -> EventHubsSmokeResult:
     bus = EventHubsBus(
-        namespace, hub, credential, client_factory, starting_position=datetime.now(UTC) - START_MARGIN
+        namespace, hub, credential, client_factory, starting_position=enqueued_since_subscribe()
     )
     try:
         stream = bus.subscribe(consumer_group)

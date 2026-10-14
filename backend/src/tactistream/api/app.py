@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import uvicorn
+from azure.identity.aio import DefaultAzureCredential as AsyncDefaultAzureCredential
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
@@ -18,6 +19,7 @@ from tactistream.telemetry.latency import LatencyRecorder
 from tactistream.telemetry.otel import setup_telemetry
 from tactistream.transport.bus import FeedBus
 from tactistream.transport.clock import Clock, MonotonicClock
+from tactistream.transport.eventhubs_bus import EventHubsBus, EventHubsClientFactory, enqueued_since_subscribe
 from tactistream.transport.memory_bus import InMemoryBus
 
 
@@ -27,14 +29,28 @@ def create_app(
     bus: FeedBus | None = None,
     *,
     wall_ms: WallClock = wall_clock_ms,
+    eventhubs_client_factory: EventHubsClientFactory | None = None,
 ) -> FastAPI:
     """Build the app. Tests inject a `FakeClock` and bus; `static_dir` is mounted only if it exists."""
     settings = settings or Settings()
     setup_telemetry(settings)
-    owned_bus: InMemoryBus | None = None
-    if bus is None:
-        if settings.bus != "memory":
-            raise NotImplementedError(f"TACTISTREAM_BUS={settings.bus} is not available yet; use memory")
+    owned_bus: InMemoryBus | EventHubsBus | None = None
+    credential: AsyncDefaultAzureCredential | None = None
+    if bus is None and settings.bus == "eventhubs":
+        namespace = settings.eventhubs_fully_qualified_namespace
+        if not namespace:
+            raise ValueError(
+                "Missing EVENTHUBS_FULLY_QUALIFIED_NAMESPACE (required by TACTISTREAM_BUS=eventhubs)"
+            )
+        credential = AsyncDefaultAzureCredential()
+        bus = owned_bus = EventHubsBus(
+            namespace,
+            settings.eventhubs_name,
+            credential,
+            eventhubs_client_factory,
+            starting_position=enqueued_since_subscribe(),
+        )
+    elif bus is None:
         bus = owned_bus = InMemoryBus()
     clock = clock or MonotonicClock()
     latency = LatencyRecorder()
@@ -46,9 +62,12 @@ def create_app(
         await registry.aclose()
         if owned_bus is not None:
             await owned_bus.close()
+        if credential is not None:
+            await credential.close()
 
     app = FastAPI(title="TactiStream", version=__version__, lifespan=lifespan)
     app.state.settings = settings
+    app.state.bus = bus
     app.state.registry = registry
     app.state.clock = clock
     app.state.latency = latency

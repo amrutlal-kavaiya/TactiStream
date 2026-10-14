@@ -8,7 +8,7 @@ import json
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
 from azure.eventhub import EventData
@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 
 OnEvent = Callable[[Any, EventData | None], Awaitable[None]]
 StartingPosition = str | datetime
+
+
+def enqueued_since_subscribe(margin: timedelta = timedelta(seconds=5)) -> Callable[[], datetime]:
+    """Start each consumer at its subscribe time, backed off by `margin` to absorb clock skew."""
+    return lambda: datetime.now(UTC) - margin
 
 
 class EventHubsProducer(Protocol):
@@ -86,8 +91,9 @@ class _Group:
 class EventHubsBus:
     """Consumers in one group share a queue fed by a single receiving client.
 
-    `starting_position` is resolved when the receive link opens, so with `"@latest"` envelopes published
-    between `subscribe()` and link open are not seen; an enqueued-time `datetime` closes that gap.
+    The service resolves `"@latest"` when the receive link opens, so envelopes published between `subscribe()`
+    and link open are not seen; `enqueued_since_subscribe()` closes that gap. A callable is resolved per group
+    at subscribe time.
     """
 
     def __init__(
@@ -97,7 +103,7 @@ class EventHubsBus:
         credential: Any,
         client_factory: EventHubsClientFactory | None = None,
         *,
-        starting_position: StartingPosition = "@latest",
+        starting_position: StartingPosition | Callable[[], StartingPosition] = "@latest",
     ) -> None:
         self._namespace = namespace
         self._hub = hub
@@ -143,6 +149,9 @@ class EventHubsBus:
     def _start(self, consumer_group: str) -> _Group:
         queue: asyncio.Queue[_Item] = asyncio.Queue()
         consumer = self._factory.consumer(self._namespace, self._hub, consumer_group, self._credential)
+        position = self._starting_position
+        if callable(position):
+            position = position()
 
         async def on_event(_context: Any, event: EventData | None) -> None:
             if event is None:
@@ -156,7 +165,7 @@ class EventHubsBus:
 
         async def receive() -> None:
             try:
-                await consumer.receive(on_event, starting_position=self._starting_position)
+                await consumer.receive(on_event, starting_position=position)
             except Exception as exc:
                 logger.error("receive failed for consumer group %s: %s", consumer_group, exc)
                 queue.put_nowait(_Failure(exc))
