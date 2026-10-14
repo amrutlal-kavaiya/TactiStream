@@ -20,7 +20,7 @@ def clock(*seconds: float) -> Callable[[], float]:
 
 async def run(hub: FakeHub, **kw: Any) -> EventHubsSmokeResult:
     kw.setdefault("clock", clock(5.0, 5.0873))
-    return await run_eventhubs_smoke(NAMESPACE, HUB, credential="cred", client_factory=hub, **kw)  # type: ignore[arg-type]
+    return await run_eventhubs_smoke(NAMESPACE, HUB, credential="cred", client_factory=hub, **kw)
 
 
 async def test_publishes_one_envelope_and_reads_it_back_via_live_state() -> None:

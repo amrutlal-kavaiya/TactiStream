@@ -10,6 +10,7 @@ from typing import Any
 import typer
 
 from tactistream.settings import Settings
+from tactistream.smoke.eventhubs import run_eventhubs_smoke
 from tactistream.smoke.foundry import run_foundry_smoke
 
 app = typer.Typer(
@@ -71,6 +72,13 @@ def foundry(
 def eventhubs() -> None:
     """Publish one envelope to Event Hubs and read it back through consumer group `live-state`."""
     settings = load_settings()
-    require({"EVENTHUBS_FULLY_QUALIFIED_NAMESPACE": settings.eventhubs_fully_qualified_namespace})
-    typer.echo("eventhubs smoke is not implemented yet", err=True)
-    raise typer.Exit(1)
+    env = require({"EVENTHUBS_FULLY_QUALIFIED_NAMESPACE": settings.eventhubs_fully_qualified_namespace})
+    result = run_or_exit(
+        "eventhubs",
+        run_eventhubs_smoke(env["EVENTHUBS_FULLY_QUALIFIED_NAMESPACE"], settings.eventhubs_name),
+    )
+    typer.echo(f"namespace: {result.namespace}")
+    typer.echo(f"hub: {result.hub}")
+    typer.echo(f"consumer_group: {result.consumer_group}")
+    typer.echo(f"record_id: {result.record_id} (matched)")
+    typer.echo(f"round_trip_ms: {result.round_trip_ms}")

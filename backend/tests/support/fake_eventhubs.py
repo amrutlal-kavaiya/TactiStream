@@ -15,18 +15,15 @@ class FakeProducer:
         self.hub = hub
         self.closed = False
 
-    async def send_batch(
-        self, event_data_batch: list[EventData], *, partition_key: str | None = None
-    ) -> None:
-        for event in event_data_batch:
-            body = event.body_as_str()
-            self.hub.sent.append((body, partition_key))
-            delivered = self.hub.transform(body)
-            if delivered is None:
-                continue
-            self.hub.log.append((datetime.now(UTC), delivered))
-            for consumer in [c for group in self.hub.consumers.values() for c in group]:
-                await consumer.push(delivered)
+    async def send_event(self, event_data: EventData, *, partition_key: str | None = None) -> None:
+        body = event_data.body_as_str()
+        self.hub.sent.append((body, partition_key))
+        delivered = self.hub.transform(body)
+        if delivered is None:
+            return
+        self.hub.log.append((datetime.now(UTC), delivered))
+        for consumer in [c for group in self.hub.consumers.values() for c in group]:
+            await consumer.push(delivered)
 
     async def close(self) -> None:
         self.closed = True
