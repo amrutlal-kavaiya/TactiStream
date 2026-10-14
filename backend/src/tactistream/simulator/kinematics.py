@@ -45,6 +45,7 @@ class KinematicsError(ValueError):
         self.t_ms = t_ms
         self.speed = speed
         self.accel = accel
+        self.limit = limit
 
 
 def spline_track(keys: Sequence[Keyframe], t_grid: NDArray[np.float64]) -> Track:
