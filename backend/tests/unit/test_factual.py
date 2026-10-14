@@ -16,7 +16,9 @@ def metric(pass_event: MatchEvent, metadata: MatchMetadata) -> MetricResult:
 
 @pytest.fixture
 def bundle(pass_event: MatchEvent, metric: MetricResult, metadata: MatchMetadata) -> InsightBundle:
-    return build_fact_bundle(pass_event, metric, metadata, state_version=12, trace_id=TRACE, now_session_ms=3000)
+    return build_fact_bundle(
+        pass_event, metric, metadata, state_version=12, trace_id=TRACE, now_session_ms=3000
+    )
 
 
 def test_bundle_has_four_variants(bundle: InsightBundle) -> None:
@@ -43,7 +45,11 @@ def test_variant_fields_follow_the_fact_path_rules(bundle: InsightBundle) -> Non
         assert packet.render.show_from_ms == 3900
         assert packet.render.show_until_ms == 9900
         assert packet.expires_at_session_ms == 33900
-        assert (packet.render.panel, packet.render.priority, packet.render.annotations) == ("lower_third", 3, [])
+        assert (packet.render.panel, packet.render.priority, packet.render.annotations) == (
+            "lower_third",
+            3,
+            [],
+        )
 
 
 def test_fan_english_text(bundle: InsightBundle) -> None:
@@ -66,7 +72,9 @@ def test_every_variant_passes_output_checks(
         assert check_packet(packet, evidence, metadata, now_ms=3000) == []
 
 
-def test_incomplete_pass_is_rejected(pass_event: MatchEvent, metric: MetricResult, metadata: MatchMetadata) -> None:
+def test_incomplete_pass_is_rejected(
+    pass_event: MatchEvent, metric: MetricResult, metadata: MatchMetadata
+) -> None:
     attempt = pass_event.model_copy(update={"outcome": "incomplete"})
     with pytest.raises(ValueError, match="completed pass"):
         build_fact_bundle(attempt, metric, metadata, state_version=12, trace_id=TRACE, now_session_ms=3000)
