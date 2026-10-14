@@ -13,7 +13,9 @@ FAN_HI = "ब्लू 8 ने ब्लू 11 को आगे की ओर �
 def evidence(pass_event: MatchEvent, metadata: MatchMetadata) -> EvidenceIndex:
     index = EvidenceIndex()
     index.add("event", pass_event, session_clock_ms=3000)
-    index.add("metric", compute_forward_progress(pass_event, metadata, state_version=5), session_clock_ms=3000)
+    index.add(
+        "metric", compute_forward_progress(pass_event, metadata, state_version=5), session_clock_ms=3000
+    )
     return index
 
 
