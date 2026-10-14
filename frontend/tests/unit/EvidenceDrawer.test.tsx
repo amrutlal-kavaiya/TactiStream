@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useState } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { StrictMode, useState } from 'react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError, type EvidenceResponse } from '../../src/api/client'
 import { EvidenceDrawer } from '../../src/components/EvidenceDrawer'
@@ -28,6 +28,10 @@ const metric: MetricResult = {
 function field(dialog: HTMLElement, term: string) {
   return within(dialog).getByText(term, { selector: 'dt' }).nextElementSibling?.textContent
 }
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 describe('EvidenceDrawer', () => {
   it('shows loading, then the key fields of an event', async () => {
@@ -123,6 +127,57 @@ describe('EvidenceDrawer', () => {
 
     await user.click(chip)
     expect(screen.getByRole('dialog')).toContainElement(document.activeElement as HTMLElement)
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(chip).toHaveFocus()
+  })
+
+  it('returns focus to the chip under StrictMode when the background is inert', async () => {
+    // Browser semantics jsdom lacks: focus() inside an inert subtree does nothing.
+    const nativeFocus = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'focus')?.value as (
+      this: HTMLElement,
+      options?: FocusOptions,
+    ) => void
+    vi.spyOn(HTMLElement.prototype, 'focus').mockImplementation(function (this: HTMLElement, options) {
+      if (this.closest('[inert]')) return
+      nativeFocus.call(this, options)
+    })
+    const user = userEvent.setup()
+    function Harness() {
+      const [open, setOpen] = useState(false)
+      return (
+        <>
+          <div inert={open}>
+            <button
+              onClick={() => {
+                setOpen(true)
+              }}
+            >
+              evt-0042
+            </button>
+          </div>
+          {open && (
+            <EvidenceDrawer
+              evidenceId="evt-0042"
+              load={() => Promise.resolve(eventEvidence)}
+              onClose={() => {
+                setOpen(false)
+              }}
+            />
+          )}
+        </>
+      )
+    }
+    render(
+      <StrictMode>
+        <Harness />
+      </StrictMode>,
+    )
+    const chip = screen.getByRole('button', { name: 'evt-0042' })
+
+    await user.click(chip)
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus()
 
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()

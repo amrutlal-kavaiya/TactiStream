@@ -59,6 +59,10 @@ export function EvidenceDrawer({ evidenceId, load, onClose }: EvidenceDrawerProp
   const headingId = useId()
   const closeRef = useRef<HTMLButtonElement>(null)
   const [state, setState] = useState<LoadState>({ status: 'loading' })
+  // Captured on first render: StrictMode re-runs effects after focus has already moved into the drawer.
+  const [opener] = useState(() =>
+    document.activeElement instanceof HTMLElement ? document.activeElement : null,
+  )
   const loadEvidence = useEffectEvent((id: string) => load(id))
   const close = useEffectEvent(() => {
     onClose()
@@ -80,7 +84,6 @@ export function EvidenceDrawer({ evidenceId, load, onClose }: EvidenceDrawerProp
   }, [evidenceId])
 
   useEffect(() => {
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
     closeRef.current?.focus()
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -93,7 +96,7 @@ export function EvidenceDrawer({ evidenceId, load, onClose }: EvidenceDrawerProp
       document.removeEventListener('keydown', onKeyDown)
       opener?.focus()
     }
-  }, [])
+  }, [opener])
 
   return (
     <div className="drawer-backdrop" onClick={onClose}>

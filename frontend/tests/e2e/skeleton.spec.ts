@@ -13,12 +13,21 @@ test('Start demo match shows a verified card whose evidence opens; Pause and Res
   await expect(card.getByText(CARD_TEXT)).toBeVisible({ timeout: 6000 })
   await expect(card).toContainText('Verified fact')
 
-  await card.getByRole('button', { name: 'evt-0042' }).click()
+  const chip = card.getByRole('button', { name: 'evt-0042' })
+  await chip.click()
   const drawer = page.getByRole('dialog', { name: 'Evidence evt-0042' })
   await expect(drawer).toContainText('pass')
   await expect(drawer).toContainText('blue-08')
   await page.keyboard.press('Escape')
   await expect(drawer).toBeHidden()
+  await expect(chip).toBeFocused()
+
+  await chip.focus()
+  await page.keyboard.press('Enter')
+  await expect(drawer).toContainText('blue-08')
+  await page.keyboard.press('Escape')
+  await expect(drawer).toBeHidden()
+  await expect(chip).toBeFocused()
 
   await page.getByRole('button', { name: 'Pause' }).click()
   await page.getByRole('button', { name: 'Reset' }).click()
