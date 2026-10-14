@@ -89,7 +89,9 @@ def test_foundry_success_prints_measurements(monkeypatch: pytest.MonkeyPatch) ->
         assert text in result.output
 
 
-@pytest.mark.parametrize("error", [SmokeError("echo mismatch"), RuntimeError("DefaultAzureCredential failed")])
+@pytest.mark.parametrize(
+    "error", [SmokeError("echo mismatch"), RuntimeError("DefaultAzureCredential failed")]
+)
 def test_foundry_failure_exits_1_without_traceback(monkeypatch: pytest.MonkeyPatch, error: Exception) -> None:
     foundry_env(monkeypatch)
 
