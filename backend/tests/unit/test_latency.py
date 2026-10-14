@@ -61,5 +61,8 @@ def test_samples_are_exported_to_otel_histograms() -> None:
                     points[metric.name] = point
     assert points["tactistream.fast_overlay_latency_ms"].count == 2
     assert points["tactistream.fast_overlay_latency_ms"].sum == 200
-    assert dict(points["tactistream.fast_overlay_latency_ms"].attributes or {}) == {"target_kind": "insight"}
+    assert dict(points["tactistream.fast_overlay_latency_ms"].attributes or {}) == {
+        "outcome": "released",
+        "config": "live",
+    }
     assert points["tactistream.narrative_latency_ms"].count == 1
