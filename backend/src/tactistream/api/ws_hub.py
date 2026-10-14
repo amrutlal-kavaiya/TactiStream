@@ -69,6 +69,10 @@ class WsHub:
         if subscription in self._subscribers:
             self._subscribers.remove(subscription)
 
+    def close(self) -> None:
+        for subscription in list(self._subscribers):
+            self.unsubscribe(subscription)
+
     def broadcast(
         self,
         type_: ServerMessageType,
