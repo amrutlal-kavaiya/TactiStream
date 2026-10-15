@@ -198,7 +198,8 @@ async def _update_state(ctx: MediaContext, **changes: Any) -> MediaState:
                 slots[slot] = record
         if changes.get("published") and MediaSlot.MAIN not in slots:
             raise ApiError(409, "main_missing", "upload or link the main video before publishing")
-        new = MediaState(slots=slots, published=changes.get("published", state.published))
+        published = changes.get("published", state.published) and MediaSlot.MAIN in slots
+        new = MediaState(slots=slots, published=published)
         await ctx.store.save_state(new)
         return new
 

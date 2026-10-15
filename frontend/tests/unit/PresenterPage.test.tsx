@@ -204,6 +204,21 @@ describe('Publish', () => {
     expect(screen.getByRole('switch', { name: 'Publish to judges' })).toBeDisabled()
     expect(screen.getByText('Upload or link the main video before publishing.')).toBeInTheDocument()
   })
+
+  it('shows off once the main video is cleared', async () => {
+    await unlocked({ slots: { main: mainRecord }, published: true })
+    routes['DELETE /api/presenter/media/main'] = json(200, { slots: {}, published: false })
+    const toggle = screen.getByRole('switch', { name: 'Publish to judges' })
+    expect(toggle).toBeChecked()
+    await userEvent.click(
+      within(screen.getByRole('region', { name: 'Main demo video' })).getByRole('button', { name: 'Clear' }),
+    )
+
+    await waitFor(() => {
+      expect(toggle).toBeDisabled()
+    })
+    expect(toggle).not.toBeChecked()
+  })
 })
 
 describe('Rehearsal', () => {

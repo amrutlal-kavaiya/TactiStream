@@ -300,7 +300,7 @@ export function PresenterPage() {
             <CardHeader header={<StepHeading text="stepPublish" />} />
             <Switch
               label={t('publishSwitch')}
-              checked={access.state.published}
+              checked={access.state.published && Boolean(access.state.slots.main)}
               disabled={!access.state.slots.main}
               onChange={(_, data) => void publish(access.key, data.checked)}
             />

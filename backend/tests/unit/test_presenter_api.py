@@ -246,6 +246,16 @@ async def test_delete_clears_slot_and_file(client: httpx.AsyncClient, tmp_path: 
     assert not (tmp_path / "media" / "main").exists()
 
 
+async def test_deleting_main_unpublishes(client: httpx.AsyncClient) -> None:
+    await upload_main(client)
+    await client.put("/api/presenter/publish", json={"published": True}, headers=AUTH)
+    response = await client.delete("/api/presenter/media/main", headers=AUTH)
+    assert response.json()["published"] is False
+    assert (await client.get("/api/presenter/state", headers=AUTH)).json()["published"] is False
+    await upload_main(client)
+    assert (await client.get("/api/config")).json() == {"demo_media": None}
+
+
 async def test_media_range_request_is_206(client: httpx.AsyncClient) -> None:
     await upload_main(client)
     await client.put("/api/presenter/publish", json={"published": True}, headers=AUTH)
