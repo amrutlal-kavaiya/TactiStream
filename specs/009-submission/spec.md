@@ -137,6 +137,61 @@ the e2e test checks duration and cue alignment.
 2. **Given** all gates pass, **When** the export runs, **Then** MP4 duration equals the sum of recap replay windows ± 200 ms and
    every VTT cue start/end equals the corresponding `overlay_track` entry ± 40 ms.
 
+### User Story 6 - The presenter prepares and publishes the demo media from one page (Priority: P1, user request 2026-10-15)
+
+The builder opens a separate, key-protected `/presenter` page in the deployed app. There they rehearse against the demo script with
+a 115-second timer, tick the recording checklist (H.264 MP4, 1920×1080, 110–119 s, labelled backup take), and fill three media
+slots — **main demo video**, **backup recording**, **captions** (.srt or .vtt) — each by uploading a file or pasting an unlisted
+YouTube URL. One Publish switch makes the media visible to judges: a "Watch demo video" button in the header and a stable `/watch`
+page that the README, judge guide, busy notice and submission checklist link to once.
+
+**Why this priority**: The jury demo and the video are submission essentials (US3/US4); doing them from the app removes four manual
+link edits per re-upload and lets the presenter rehearse in the same tool.
+
+**Independent Test**: Playwright: open `/presenter`, enter the key, upload a small MP4 and a .vtt, publish; open `/` → "Watch demo
+video" → the dialog's `<video>` reaches `readyState ≥ 2` with one captions track; `/watch` shows the same; unpublish hides both.
+
+**Acceptance Scenarios**:
+
+1. **Given** `TACTISTREAM_PRESENTER_KEY` is unset, **When** anyone opens `/presenter` or calls `/api/presenter/*`, **Then** the page
+   says "Presenter mode is disabled on this server" and every presenter API returns 404 `presenter_disabled`.
+2. **Given** the key is set, **When** a request lacks or has a wrong `X-Presenter-Key`, **Then** it gets 401 `presenter_key_invalid`
+   and nothing is stored.
+3. **Given** a valid key, **When** the presenter uploads a 1920×1080, 115 s MP4 to `main`, **Then** the slot shows file name, size,
+   duration 1:55, resolution and a green "Meets video spec" badge; a 2:10 or 1280×720 file uploads but shows a warning badge naming
+   the failed rule.
+4. **Given** media is uploaded but not published, **When** a judge opens `/` or `/watch`, **Then** no video button or player appears
+   (`/watch` says "The demo video is not published yet").
+5. **Given** the presenter publishes, **When** a judge opens `/` → "Watch demo video", **Then** a Fluent dialog plays the main video
+   with captions (or links out for a YouTube URL), offers "Backup recording" when present, and seeking works (HTTP Range).
+6. **Given** the server restarts, **When** a judge opens `/watch`, **Then** the published media is still served (metadata and files
+   persisted in the media store).
+
+### User Story 6 - The presenter prepares and publishes the demo media from one page (Priority: P1, pulled forward 15 Oct)
+
+User request 2026-10-15: one separate page where the presenter rehearses the jury demo, follows the recording checklist,
+uploads (or links) the main video, the backup recording and the captions, and publishes them so judges can watch from the app.
+
+**Why this priority**: the jury demo and the backup video are submission-critical; a single page removes manual link edits in
+four places and lets the presenter re-publish without a rebuild or redeploy.
+
+**Independent Test**: `npx playwright test presenter.spec.ts` — enter the presenter key at `/presenter`, upload a test MP4 and a
+captions file, publish, then on `/` click "Watch demo video" and see the video play with captions; `/watch` shows the same.
+
+**Acceptance Scenarios**:
+
+1. **Given** `TACTISTREAM_PRESENTER_KEY` is unset, **When** anyone opens `/presenter` or calls `/api/presenter/*`, **Then** the page
+   shows "Presenter mode is disabled on this server" and the API returns 404.
+2. **Given** the key is set, **When** the presenter enters a wrong key, **Then** uploads are refused (401) and nothing is stored.
+3. **Given** the right key, **When** the presenter selects an MP4, **Then** the page shows its duration and resolution before upload
+   and warns (does not block) if it is outside 110–119 s or not 1920×1080.
+4. **Given** main video, backup and captions are uploaded (or linked) and Publish is on, **When** a judge opens `/`, **Then** the
+   header shows "Watch demo video", which opens a dialog that plays the main video with the captions track; `/watch` shows the same
+   with a "Backup recording" link.
+5. **Given** Publish is off, **When** a judge opens `/` or `/watch`, **Then** no video button is shown and `/watch` says
+   "The demo video is not published yet".
+6. **Given** the server restarts, **When** a judge opens `/watch`, **Then** the published media is still served (metadata persisted).
+
 ### Edge Cases
 
 - Live app down during judging → README shows the backup video link and judge guide explains local run; incident recorded in
@@ -232,7 +287,32 @@ the e2e test checks duration and cue alignment.
   video capture, convert to H.264 MP4 with ffmpeg, write a WebVTT file from `overlay_track`, and save both as
   `exports/{match_id}/{recap_id}.{mp4,vtt}` (optionally uploaded to the `artifacts` Blob container under the same key).
 - **FR-024**: Uploaded clip alignment, screen share, forecasting and full video auto-eventing are explicitly excluded and listed as
-  "Later" in README and limitations.
+  "Later" in README and limitations. (Hosting the presenter's own demo video, US6, is not clip alignment and is in scope.)
+
+#### Presenter page (US6)
+
+- **FR-025**: Frontend MUST provide `/presenter` (Fluent UI, not linked from judge UI) with four steps: Rehearse (demo beats from
+  `docs/demo-script.md` when present, else the 0:00–1:55 table in FR-017, with a 115 s timer highlighting the current beat and an
+  "Open live app" button), Record checklist (H.264 MP4 1920×1080, 110–119 s, backup take labelled per T033; ticks persisted in
+  `localStorage["tactistream.presenter.checklist"]`), Media (slots `main`, `backup`, `captions`), Publish (one switch).
+- **FR-026**: Presenter API MUST exist only when `TACTISTREAM_PRESENTER_KEY` is set (else 404) and MUST require header
+  `X-Presenter-Key` matching it (constant-time compare; else 401 `presenter_key_invalid`). The key is a Container Apps secret,
+  never in git, never logged, kept by the browser in `sessionStorage` only.
+- **FR-027**: `PUT /api/presenter/media/{slot}` MUST accept either a streamed file body (`main`/`backup`: `video/mp4`, ≤ 500 MB;
+  `captions`: `.vtt` or `.srt` text ≤ 1 MB, SRT converted to VTT on save) or JSON `{"url": "https://…"}` (https only); it records
+  metadata `{slot, kind: "file"|"link", filename, bytes, sha256, duration_s, width, height, uploaded_at}` (duration/resolution as
+  reported by the browser, labelled `client_reported`). `DELETE` clears a slot. `PUT /api/presenter/publish {"published": bool}`.
+  `GET /api/presenter/state` returns all slots + published flag.
+- **FR-028**: `GET /api/config` (public) MUST return `{"demo_media": null}` unless published, else
+  `{"demo_media": {"main": {"url", "kind"}, "backup": {...} | null, "captions_url": str | null}}`; file slots are served at
+  `GET /media/{slot}` with HTTP Range support (seekable video) and correct content types; `/media` is excluded from SPA fallback.
+- **FR-029**: Media files and `media/state.json` MUST be stored through a `MediaStore` (`local`: `{data_dir}/media/`; `blob`: the
+  existing `artifacts` container under `media/` with `DefaultAzureCredential`), selected by `TACTISTREAM_ARTIFACT_STORE`; nothing
+  under `data/media/` is committed (gitignored).
+- **FR-030**: Judge UI MUST show a "Watch demo video" header button only when `demo_media` is published; it opens a Fluent `Dialog`
+  with a `<video controls>` element and a captions `<track default>` for file media, or an external link for URL media. `/watch`
+  MUST show the same player full-width plus a "Backup recording" link when present. README, judge guide and submission checklist
+  link to `/watch` (one stable URL).
 
 ### Key Entities
 
@@ -257,6 +337,8 @@ the e2e test checks duration and cue alignment.
   and network.
 - **SC-007**: Availability log shows a passing check every day from 26 Oct to 10 Nov PT (uptime workflow + manual weekly `/demo` check).
 - **SC-008**: Every criterion in the five-criteria table cites at least two concrete evidence items that exist at submission time.
+- **SC-009**: Presenter end-to-end test passes 3/3 locally (upload → publish → judge plays video with captions); against the deployed
+  app the presenter publishes the real videos and a logged-out browser plays `/watch` (recorded in the checklist).
 
 ## Assumptions
 
