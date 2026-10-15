@@ -36,15 +36,21 @@ class Keyframe:
     pos: Point
 
 
+KinematicsCode = Literal["speed_exceeded", "accel_exceeded"]
+
+
 class KinematicsError(ValueError):
     """A trajectory breaks the speed or acceleration bound; generation fails instead of clamping."""
 
-    def __init__(self, player_id: str, t_ms: int, speed: float, accel: float, limit: str) -> None:
+    def __init__(
+        self, player_id: str, t_ms: int, speed: float, accel: float, code: KinematicsCode, limit: str
+    ) -> None:
         super().__init__(f"{player_id} at {t_ms} ms: {limit} (speed {speed:.2f} m/s, accel {accel:.2f} m/s²)")
         self.player_id = player_id
         self.t_ms = t_ms
         self.speed = speed
         self.accel = accel
+        self.code: KinematicsCode = code
         self.limit = limit
 
 
@@ -138,14 +144,15 @@ def check_bounds(
     first_accel = int(bad_accel[0]) + 1 if len(bad_accel) else None
     if first_speed is None and first_accel is None:
         return
+    code: KinematicsCode
     if first_accel is None or (first_speed is not None and first_speed <= first_accel):
         assert first_speed is not None
-        k, limit = first_speed, f"speed exceeds {max_speed} m/s"
+        k, code, limit = first_speed, "speed_exceeded", f"speed exceeds {max_speed} m/s"
     else:
-        k, limit = first_accel, f"acceleration exceeds {max_accel} m/s²"
+        k, code, limit = first_accel, "accel_exceeded", f"acceleration exceeds {max_accel} m/s²"
     speed = float(speeds[k - 1])
     accel = float(accels[k - 1]) if 0 < k <= len(accels) else 0.0
-    raise KinematicsError(player_id, t0_ms + k * frame_ms, speed, accel, limit)
+    raise KinematicsError(player_id, t0_ms + k * frame_ms, speed, accel, code, limit)
 
 
 BallPhaseKind = Literal["controlled", "flight", "placed", "dead"]

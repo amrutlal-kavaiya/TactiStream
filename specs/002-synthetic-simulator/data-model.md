@@ -132,7 +132,7 @@ BALL_CARRY_MAX_DIST_M = 0.5; BALL_CARRY_OFFSET_M = 0.3
 REPOSITION_SPEED_MPS = 7.0; REPOSITION_ACCEL_MPS2 = 4.0; REPOSITION_MIN_MS = 3000; FRAME_MS = 100
 
 @dataclass(frozen=True) class Keyframe: t_ms: int; pos: tuple[float, float]
-class KinematicsError(ValueError): player_id: str; t_ms: int; speed: float; accel: float
+class KinematicsError(ValueError): player_id: str; t_ms: int; speed: float; accel: float; code: Literal["speed_exceeded", "accel_exceeded"]
 def spline_track(keys: Sequence[Keyframe], t_grid: np.ndarray) -> np.ndarray: ...          # C1 cubic Hermite (Catmull–Rom tangents)
 def follow_track(targets: np.ndarray, start: tuple[float, float], start_vel: tuple[float, float],
                  max_speed: float, max_accel: float) -> np.ndarray: ...                      # velocity/accel-clamped follower

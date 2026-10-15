@@ -50,8 +50,7 @@ def generate(
     except (ConfigError, FileExistsError) as exc:
         _fail(EXIT_USAGE, [f"error: {exc}"])
     except KinematicsError as exc:
-        code = "speed_exceeded" if "speed exceeds" in exc.limit else "accel_exceeded"
-        _fail(EXIT_INVALID, ["error: generation failed", f"{code} {exc.player_id} {exc}"])
+        _fail(EXIT_INVALID, ["error: generation failed", f"{exc.code} {exc.player_id} {exc}"])
     except IllegalTransition as exc:
         _fail(EXIT_INVALID, ["error: generation failed", f"illegal_transition {exc.event_id} {exc.detail}"])
     report = validate_output(output)

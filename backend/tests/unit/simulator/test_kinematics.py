@@ -56,6 +56,7 @@ def test_check_bounds_rejects_excess_speed() -> None:
     assert info.value.player_id == "blue-09"
     assert info.value.t_ms == 2100
     assert info.value.speed == pytest.approx(15.0)
+    assert info.value.code == "speed_exceeded"
 
 
 def test_check_bounds_rejects_excess_acceleration() -> None:
@@ -66,6 +67,7 @@ def test_check_bounds_rejects_excess_acceleration() -> None:
     assert info.value.player_id == "amber-04"
     assert info.value.t_ms == 200
     assert info.value.accel == pytest.approx(30.0)
+    assert info.value.code == "accel_exceeded"
 
 
 def test_check_bounds_accepts_limits() -> None:

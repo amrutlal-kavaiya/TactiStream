@@ -1,9 +1,12 @@
 import json
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
+from tactistream.simulator import cli
 from tactistream.simulator.cli import app
+from tactistream.simulator.kinematics import KinematicsError
 
 GOLDEN = Path(__file__).resolve().parents[2] / "golden" / "simulator_hashes.json"
 HERO = ["generate", "--scenario", "space_creation", "--seed", "42", "--variant", "A", "--split", "dev"]
@@ -39,6 +42,19 @@ def test_unknown_scenario_lists_valid_names(tmp_path: Path) -> None:
     assert "space_creation" in result.output and "demo_match" in result.output
     assert "Traceback" not in result.output
     assert not (tmp_path / "x").exists()
+
+
+def test_kinematics_failure_maps_by_code(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def boom(config: object) -> None:
+        raise KinematicsError("blue-09", 300, 1.0, 9.0, "accel_exceeded", "speed exceeds the plan")
+
+    monkeypatch.setattr(cli, "simulate", boom)
+    out = tmp_path / "x"
+    result = runner.invoke(app, [*HERO, "--out", str(out)])
+    assert result.exit_code == 3
+    assert "accel_exceeded blue-09 " in result.output
+    assert "Traceback" not in result.output
+    assert not out.exists()
 
 
 def test_list_prints_eight_scenarios() -> None:
