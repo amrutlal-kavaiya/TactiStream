@@ -40,8 +40,9 @@ function keyed(key: string, state: unknown): Route {
 async function unlocked(state: unknown = empty) {
   sessionStorage.setItem(KEY_STORAGE, 'k1')
   routes['GET /api/presenter/state'] = keyed('k1', state)
-  render(<PresenterPage />)
+  const view = render(<PresenterPage />)
   await screen.findByRole('heading', { name: '1. Rehearse' })
+  return view
 }
 
 beforeEach(() => {
@@ -164,6 +165,36 @@ describe('Media slots', () => {
     expect(await backup.findByRole('link', { name: 'https://youtu.be/b' })).toBeInTheDocument()
   })
 
+  async function startUpload() {
+    mockVideoMetadata({ duration: 115, width: 1920, height: 1080 })
+    const view = await unlocked()
+    await userEvent.upload(
+      mainSlot().getByLabelText('Choose file'),
+      new File([new Uint8Array(16)], 'demo.mp4', { type: 'video/mp4' }),
+    )
+    await userEvent.click(await mainSlot().findByRole('button', { name: 'Upload' }))
+    const xhr = MockXHR.instances[0]
+    if (!xhr) throw new Error('no XHR sent')
+    return { view, xhr }
+  }
+
+  it('cancels a running upload without showing an error', async () => {
+    const { xhr } = await startUpload()
+    await userEvent.click(mainSlot().getByRole('button', { name: 'Cancel upload' }))
+
+    expect(xhr.aborted).toBe(true)
+    await waitFor(() => {
+      expect(mainSlot().queryByRole('button', { name: 'Cancel upload' })).not.toBeInTheDocument()
+    })
+    expect(mainSlot().queryByRole('alert')).not.toBeInTheDocument()
+    expect(mainSlot().getByRole('button', { name: 'Upload' })).toBeEnabled()
+  })
+
+  it('aborts a running upload when the page unmounts', async () => {
+    const { view, xhr } = await startUpload()
+    view.unmount()
+    expect(xhr.aborted).toBe(true)
+  })
 
   it('offers no link input for captions', async () => {
     await unlocked()

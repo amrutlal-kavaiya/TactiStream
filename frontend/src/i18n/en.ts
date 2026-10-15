@@ -97,6 +97,7 @@ export const en = {
   upload: 'Upload',
   uploading: 'Uploading…',
   uploadProgress: 'Upload progress',
+  cancelUpload: 'Cancel upload',
   selectedNotUploaded: 'Selected — not uploaded yet',
   mediaLink: 'Or paste an unlisted YouTube URL (https)',
   saveLink: 'Save link',

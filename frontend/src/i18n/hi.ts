@@ -99,6 +99,7 @@ export const hi: Record<MessageKey, string> = {
   upload: 'अपलोड करें',
   uploading: 'अपलोड हो रहा है…',
   uploadProgress: 'अपलोड प्रगति',
+  cancelUpload: 'अपलोड रद्द करें',
   selectedNotUploaded: 'चुनी गई — अभी अपलोड नहीं हुई',
   mediaLink: 'या एक अनलिस्टेड YouTube URL (https) चिपकाएँ',
   saveLink: 'लिंक सहेजें',

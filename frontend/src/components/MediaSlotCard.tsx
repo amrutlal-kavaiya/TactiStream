@@ -14,8 +14,8 @@ import {
   tokens,
   useId,
 } from '@fluentui/react-components'
-import { ArrowUpload20Regular, Delete20Regular, Link20Regular } from '@fluentui/react-icons'
-import { type SubmitEvent, useState } from 'react'
+import { ArrowUpload20Regular, Delete20Regular, Dismiss20Regular, Link20Regular } from '@fluentui/react-icons'
+import { type SubmitEvent, useEffect, useRef, useState } from 'react'
 
 import { ApiError } from '../api/client'
 import type { MessageKey } from '../i18n/en'
@@ -129,6 +129,14 @@ export function MediaSlotCard({
   const [link, setLink] = useState('')
   const [error, setError] = useState<MessageKey | null>(null)
   const busy = progress !== null
+  const uploadRef = useRef<AbortController | null>(null)
+
+  useEffect(
+    () => () => {
+      uploadRef.current?.abort()
+    },
+    [],
+  )
 
   function fail(caught: unknown) {
     if (caught instanceof ApiError && caught.code === 'presenter_key_invalid') onUnauthorized()
@@ -148,12 +156,18 @@ export function MediaSlotCard({
     if (!pending) return
     setError(null)
     setProgress(0)
+    const controller = new AbortController()
+    uploadRef.current = controller
     try {
-      onChange(slot, await uploadMedia(slot, pending.file, pending.meta, presenterKey, setProgress))
+      onChange(
+        slot,
+        await uploadMedia(slot, pending.file, pending.meta, presenterKey, setProgress, controller.signal),
+      )
       setPending(null)
     } catch (caught) {
-      fail(caught)
+      if (!controller.signal.aborted) fail(caught)
     } finally {
+      uploadRef.current = null
       setProgress(null)
     }
   }
@@ -254,6 +268,16 @@ export function MediaSlotCard({
         <Field label={t('uploadProgress')} validationState="none">
           <ProgressBar value={progress} />
         </Field>
+      )}
+      {progress !== null && (
+        <Button
+          icon={<Dismiss20Regular />}
+          onClick={() => {
+            uploadRef.current?.abort()
+          }}
+        >
+          {t('cancelUpload')}
+        </Button>
       )}
 
       {isVideo && (
