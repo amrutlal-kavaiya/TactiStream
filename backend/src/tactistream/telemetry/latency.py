@@ -97,15 +97,22 @@ class LatencyRecorder:
     def samples(self, kind: LatencyKind) -> list[LatencySample]:
         return list(self._samples[kind])
 
-    def percentile(self, kind: LatencyKind, p: float) -> int | None:
-        """Nearest-rank percentile (`0 < p <= 100`); `None` when no samples were recorded."""
+    def percentile(self, kind: LatencyKind, p: float, **where: AttrValue) -> int | None:
+        """Nearest-rank percentile (`0 < p <= 100`) over samples whose attrs match `where`;
+        `None` when none match."""
         if not 0 < p <= 100:
             raise ValueError("percentile must be in (0, 100]")
-        values = sorted(s.ms for s in self._samples[kind])
+        values = sorted(s.ms for s in self._matching(kind, where))
         if not values:
             return None
         rank = math.ceil(p * len(values) / 100)
         return values[rank - 1]
+
+    def count(self, kind: LatencyKind, **where: AttrValue) -> int:
+        return sum(1 for _ in self._matching(kind, where))
+
+    def _matching(self, kind: LatencyKind, where: Mapping[str, AttrValue]) -> list[LatencySample]:
+        return [s for s in self._samples[kind] if all(s.attrs.get(k) == v for k, v in where.items())]
 
 
 def _log_attributes(sample: LatencySampleRecord) -> dict[str, Any]:
