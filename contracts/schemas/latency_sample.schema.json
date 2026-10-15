@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tactistream.dev/contracts/latency_sample.schema.json",
+  "title": "LatencySample",
+  "description": "One measured latency observation (upper bound: includes the display-ack return trip). Fallback and abstained samples are always kept. Published as feed envelope kind latency with record_id = sample_id.",
+  "type": "object",
+  "required": ["schema_version", "sample_id", "match_id", "kind", "value_ms", "outcome", "target_id", "viewer_id", "config", "recorded_ms"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
+    "sample_id": { "type": "string", "minLength": 1, "description": "lat-{kind}-{target_id}-{viewer_id}, or uuid4 hex for probes; dedupe key." },
+    "match_id": { "$ref": "common.schema.json#/$defs/MatchId" },
+    "kind": { "enum": ["fast_overlay", "narrative"] },
+    "value_ms": { "$ref": "common.schema.json#/$defs/Milliseconds" },
+    "outcome": { "enum": ["released", "fallback", "abstained"] },
+    "fallback_reason": { "enum": ["timeout", "verifier_rejected", "output_check_failed", "model_error", "expired", "insufficient_tracking"] },
+    "target_id": { "type": "string", "minLength": 1, "description": "event_id, or insight_id:version." },
+    "viewer_id": { "type": "string", "minLength": 1, "description": "Per-WebSocket connection id (v- + 8 hex)." },
+    "trace_id": { "$ref": "common.schema.json#/$defs/TraceId" },
+    "config": { "type": "string", "minLength": 1, "description": "live in the app; evaluation config id when produced by 008 runners." },
+    "recorded_ms": { "type": "integer", "minimum": 0, "description": "Server wall clock (epoch ms)." }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["kind", "outcome"],
+        "properties": { "kind": { "const": "narrative" }, "outcome": { "const": "fallback" } }
+      },
+      "then": { "required": ["fallback_reason"] }
+    }
+  ]
+}

@@ -32,6 +32,23 @@ jobs:
       - run: uv run mypy src
       - run: uv run pytest
 
+  infra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: az bicep install
+      - name: Bicep build and lint (warnings fail)
+        run: |
+          az bicep build --file infra/main.bicep --stdout 2> bicep-build.log > /dev/null
+          cat bicep-build.log
+          if grep -Eq 'Warning|Error' bicep-build.log; then exit 1; fi
+      - run: uv python install 3.12
+      - run: uv sync --locked
+        working-directory: backend
+      - run: uv run pytest -m infra tests/infra
+        working-directory: backend
+
   frontend:
     runs-on: ubuntu-latest
     defaults:

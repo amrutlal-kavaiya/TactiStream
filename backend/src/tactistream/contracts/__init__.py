@@ -38,6 +38,7 @@ from tactistream.contracts.common import (
 from tactistream.contracts.envelope import EnvelopeKind, EnvelopePayload, FeedEnvelope
 from tactistream.contracts.event import EventType, MatchEvent, Outcome
 from tactistream.contracts.insight import InsightBundle, InsightPacket, RenderSpec
+from tactistream.contracts.latency import LatencyKind, LatencyOutcome, LatencySample
 from tactistream.contracts.match import (
     AttackDirection,
     LocalizedName,
@@ -91,6 +92,9 @@ __all__ = [
     "InsightPacket",
     "InsightRevoked",
     "Language",
+    "LatencyKind",
+    "LatencyOutcome",
+    "LatencySample",
     "LocalizedName",
     "MatchEvent",
     "MatchId",

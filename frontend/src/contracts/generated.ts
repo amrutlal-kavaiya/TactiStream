@@ -379,6 +379,7 @@ export interface TactiStreamContracts {
   MatchEvent?: MatchEvent
   FeedEnvelope?: FeedEnvelope
   InsightPacket?: InsightPacket
+  LatencySample?: LatencySample
   MatchMetadata?: MatchMetadata
   MetricResult?: MetricResult
   Recap?: Recap
@@ -674,6 +675,47 @@ export interface InsightPacket {
   }
   expires_at_session_ms: Milliseconds
   trace_id: TraceId
+}
+/**
+ * One measured latency observation (upper bound: includes the display-ack return trip). Fallback and abstained samples are always kept. Published as feed envelope kind latency with record_id = sample_id.
+ *
+ * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
+ * via the `definition` "LatencySample".
+ */
+export interface LatencySample {
+  schema_version: SchemaVersion
+  /**
+   * lat-{kind}-{target_id}-{viewer_id}, or uuid4 hex for probes; dedupe key.
+   */
+  sample_id: string
+  match_id: MatchId
+  kind: 'fast_overlay' | 'narrative'
+  value_ms: Milliseconds
+  outcome: 'released' | 'fallback' | 'abstained'
+  fallback_reason?:
+    | 'timeout'
+    | 'verifier_rejected'
+    | 'output_check_failed'
+    | 'model_error'
+    | 'expired'
+    | 'insufficient_tracking'
+  /**
+   * event_id, or insight_id:version.
+   */
+  target_id: string
+  /**
+   * Per-WebSocket connection id (v- + 8 hex).
+   */
+  viewer_id: string
+  trace_id?: TraceId
+  /**
+   * live in the app; evaluation config id when produced by 008 runners.
+   */
+  config: string
+  /**
+   * Server wall clock (epoch ms).
+   */
+  recorded_ms: number
 }
 /**
  * A deterministic, inspectable measurement with its definition version, window and contributing evidence.

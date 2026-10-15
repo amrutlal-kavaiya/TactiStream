@@ -1,0 +1,47 @@
+// Saved Application Insights queries (FR-021). Each block starts with `// name: <Name>`; run them all with
+// infra/scripts/check-telemetry.sh. Latency percentiles come from per-sample `tactistream.latency` log records
+// (research R7): OTel histograms are pre-aggregated in customMetrics and cannot give exact percentiles.
+
+// name: FastOverlayP95
+traces
+| where timestamp > ago(1d) and message == "tactistream.latency"
+| where tostring(customDimensions.kind) == "fast_overlay"
+| summarize percentiles(todouble(customDimensions.value_ms), 50, 95), samples = count(), fallback_share = round(1.0 * countif(tostring(customDimensions.outcome) != "released") / count(), 3) by config = tostring(customDimensions.config)
+
+// name: NarrativeP95
+traces
+| where timestamp > ago(1d) and message == "tactistream.latency"
+| where tostring(customDimensions.kind) == "narrative"
+| summarize percentiles(todouble(customDimensions.value_ms), 50, 95), samples = count(), fallbacks = countif(tostring(customDimensions.outcome) == "fallback"), fallback_share = round(1.0 * countif(tostring(customDimensions.outcome) == "fallback") / count(), 3) by config = tostring(customDimensions.config)
+
+// name: FallbackByReason
+customMetrics
+| where timestamp > ago(1d) and name == "tactistream.narrative_fallback_total"
+| summarize fallbacks = sum(valueSum) by reason = tostring(customDimensions.reason), config = tostring(customDimensions.config)
+| order by fallbacks desc
+
+// name: TokensByAgent
+customMetrics
+| where timestamp > ago(1d) and name in ("tactistream.model_tokens_total", "tactistream.model_calls_total")
+| extend agent = tostring(customDimensions.agent), model = tostring(customDimensions.model)
+| summarize calls = sumif(valueSum, name == "tactistream.model_calls_total"), input_tokens = sumif(valueSum, name == "tactistream.model_tokens_total" and tostring(customDimensions.direction) == "input"), output_tokens = sumif(valueSum, name == "tactistream.model_tokens_total" and tostring(customDimensions.direction) == "output") by agent, model
+| order by agent asc
+
+// name: TraceById
+let trace_id = "<id>";
+union requests, dependencies, traces
+| where timestamp > ago(7d) and operation_Id == trace_id
+| project timestamp, itemType, name, message, id, operation_ParentId, duration, success, customDimensions
+| order by timestamp asc
+
+// name: RequestsAndFailures
+requests
+| where timestamp > ago(1d)
+| summarize requests = count(), failures = countif(success == false), p95_ms = percentile(duration, 95) by name, resultCode
+| union (exceptions | where timestamp > ago(1d) | summarize failures = count() by name = type)
+| order by failures desc, requests desc
+
+// name: HistoryQueryHealth
+customMetrics
+| where timestamp > ago(1d) and name == "tactistream.history_query_ms"
+| summarize calls = sum(valueCount), avg_ms = round(sum(valueSum) / sum(valueCount), 1), max_ms = max(valueMax) by status = tostring(customDimensions.status)
