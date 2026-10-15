@@ -15,16 +15,15 @@ export interface AppShellProps {
   inert?: boolean
 }
 
+// FluentProvider copies its className onto every portal mount node (absolute, z-index 1000000), so the provider
+// carries no size or background; those live on the shell.
 const useStyles = makeStyles({
-  provider: {
-    minHeight: '100vh',
-    backgroundColor: tokens.colorNeutralBackground2,
-    color: tokens.colorNeutralForeground1,
-  },
+  provider: { color: tokens.colorNeutralForeground1 },
   dark: { colorScheme: 'dark' },
   light: { colorScheme: 'light' },
   shell: {
     minHeight: '100vh',
+    backgroundColor: tokens.colorNeutralBackground2,
     display: 'grid',
     gridTemplateRows: 'auto auto 1fr',
     gridTemplateColumns: 'minmax(0, 1fr) 360px',

@@ -1,4 +1,4 @@
-import { createDarkTheme, createLightTheme } from '@fluentui/react-components'
+import { createDarkTheme, createLightTheme, Tooltip } from '@fluentui/react-components'
 import { act, render, renderHook, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -132,5 +132,33 @@ describe('AppShell', () => {
     await user.click(screen.getByRole('button', { name: 'toggle' }))
     expect(shell).toHaveAttribute('data-theme', 'light')
     expect(localStorage.getItem('tactistream.theme')).toBe('light')
+  })
+
+  it('does not size the portal mount nodes to the viewport (they would overlay the page)', () => {
+    render(
+      <AppShell
+        themeName="dark"
+        header={
+          <Tooltip content="hint" relationship="description">
+            <button type="button">with tooltip</button>
+          </Tooltip>
+        }
+        commandBar={null}
+        stage={null}
+        rail={null}
+      />,
+    )
+    const portals = document.querySelectorAll<HTMLElement>('[data-portal-node]')
+    expect(portals.length).toBeGreaterThan(0)
+    const rules = [...document.styleSheets].flatMap((sheet) => [...sheet.cssRules])
+    for (const portal of portals) {
+      const sizing = rules
+        .filter(
+          (rule): rule is CSSStyleRule => rule instanceof CSSStyleRule && portal.matches(rule.selectorText),
+        )
+        .filter((rule) => rule.style.minHeight || rule.style.height)
+        .map((rule) => rule.cssText)
+      expect(sizing).toEqual([])
+    }
   })
 })
