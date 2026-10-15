@@ -26,7 +26,7 @@ from tactistream.contracts.common import (
     ViewerMode,
 )
 
-InsightLabel = Literal["synthetic", "interpretation", "partial_tracking", "fallback"]
+InsightLabel = Literal["synthetic", "interpretation", "partial_tracking", "fallback", "demo_fixture"]
 
 
 class RenderSpec(ContractModel):

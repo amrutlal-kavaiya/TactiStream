@@ -19,6 +19,7 @@ from tactistream.contracts.common import (
     Priority,
     TeamId,
 )
+from tactistream.contracts.metric import MetricUnit
 
 SlotKind = Literal["player", "team", "metric", "event_time"]
 ClaimKind = Literal["fact", "interpretation"]
@@ -44,6 +45,8 @@ class SlotValue(ContractModel):
     team_id: TeamId | None = None
     metric_id: MetricId | None = None
     event_id: EventId | None = None
+    value: float | None = None
+    unit: MetricUnit | None = None
 
 
 class Claim(ContractModel):
