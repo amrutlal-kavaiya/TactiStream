@@ -167,31 +167,6 @@ video" → the dialog's `<video>` reaches `readyState ≥ 2` with one captions t
 6. **Given** the server restarts, **When** a judge opens `/watch`, **Then** the published media is still served (metadata and files
    persisted in the media store).
 
-### User Story 6 - The presenter prepares and publishes the demo media from one page (Priority: P1, pulled forward 15 Oct)
-
-User request 2026-10-15: one separate page where the presenter rehearses the jury demo, follows the recording checklist,
-uploads (or links) the main video, the backup recording and the captions, and publishes them so judges can watch from the app.
-
-**Why this priority**: the jury demo and the backup video are submission-critical; a single page removes manual link edits in
-four places and lets the presenter re-publish without a rebuild or redeploy.
-
-**Independent Test**: `npx playwright test presenter.spec.ts` — enter the presenter key at `/presenter`, upload a test MP4 and a
-captions file, publish, then on `/` click "Watch demo video" and see the video play with captions; `/watch` shows the same.
-
-**Acceptance Scenarios**:
-
-1. **Given** `TACTISTREAM_PRESENTER_KEY` is unset, **When** anyone opens `/presenter` or calls `/api/presenter/*`, **Then** the page
-   shows "Presenter mode is disabled on this server" and the API returns 404.
-2. **Given** the key is set, **When** the presenter enters a wrong key, **Then** uploads are refused (401) and nothing is stored.
-3. **Given** the right key, **When** the presenter selects an MP4, **Then** the page shows its duration and resolution before upload
-   and warns (does not block) if it is outside 110–119 s or not 1920×1080.
-4. **Given** main video, backup and captions are uploaded (or linked) and Publish is on, **When** a judge opens `/`, **Then** the
-   header shows "Watch demo video", which opens a dialog that plays the main video with the captions track; `/watch` shows the same
-   with a "Backup recording" link.
-5. **Given** Publish is off, **When** a judge opens `/` or `/watch`, **Then** no video button is shown and `/watch` says
-   "The demo video is not published yet".
-6. **Given** the server restarts, **When** a judge opens `/watch`, **Then** the published media is still served (metadata persisted).
-
 ### Edge Cases
 
 - Live app down during judging → README shows the backup video link and judge guide explains local run; incident recorded in
