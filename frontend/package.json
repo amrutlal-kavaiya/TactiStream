@@ -13,7 +13,8 @@
     "typecheck": "tsc -b --noEmit",
     "e2e": "playwright test",
     "contracts:gen": "node scripts/gen-contracts.mjs",
-    "screenshots": "node scripts/screenshots.mjs"
+    "screenshots": "node scripts/screenshots.mjs",
+    "sample-video": "node scripts/make-sample-video.mjs"
   },
   "dependencies": {
     "@fluentui/react-components": "9.74.9",
