@@ -27,6 +27,9 @@ param alertEmail string
 @description('Monthly budget amount in the billing currency.')
 param monthlyBudget int = 100
 
+@description('First day of the budget period (yyyy-MM-dd); fixed so re-provisioning never moves it.')
+param budgetStartDate string = '2026-10-01'
+
 @description('Container image; empty uses a public placeholder until the first azd deploy.')
 param imageName string = ''
 
@@ -172,6 +175,7 @@ module budget 'modules/budget.bicep' = {
     name: names.budget
     monthlyBudget: monthlyBudget
     alertEmail: alertEmail
+    startDate: budgetStartDate
   }
 }
 

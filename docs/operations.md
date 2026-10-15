@@ -42,6 +42,10 @@ infra/scripts/inventory.sh rg-tactistream-prod <foundry-rg> <foundry-account> > 
   → wait for `healthState == Healthy` → `tactistream-smoke deployed`). If the smoke fails after the update, the workflow
   restores the previously running image.
 - Manual smoke: `cd backend && uv run tactistream-smoke deployed --base-url <app>` (add `--soak-s 300` for the WebSocket soak).
+- The workflow sets the image directly, so azd's `SERVICE_WEB_IMAGE_NAME` goes stale: before any later `azd provision`, run
+  `azd env set SERVICE_WEB_IMAGE_NAME <acr>.azurecr.io/tactistream:<current-sha>` or provisioning reverts the image.
+- The deploy and uptime smokes play and then reset the shared demo match (`demo-blue-amber-001`); a viewer watching at that
+  moment sees it restart. Avoid deploying during scheduled judging sessions.
 
 ## Rollback
 

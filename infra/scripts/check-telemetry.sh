@@ -26,7 +26,8 @@ run_query() {
 
 latest_trace_id=$(run_query 'union dependencies, requests
 | where timestamp > ago(7d)
-| order by (itemType == "dependency" and name == "tactistream.explain_moment") desc, timestamp desc
+| extend is_workflow = iff(itemType == "dependency" and name == "tactistream.explain_moment", 1, 0)
+| order by is_workflow desc, timestamp desc
 | take 1
 | project operation_Id' | jq -r '.tables[0].rows[0][0] // empty')
 
