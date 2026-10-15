@@ -1,0 +1,67 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency: deploy-prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
+    env:
+      IMAGE: ${{ vars.ACR_NAME }}.azurecr.io/tactistream:${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Install the containerapp CLI extension
+        run: az extension add --name containerapp --upgrade --only-show-errors
+      - uses: docker/setup-buildx-action@v3
+      - run: az acr login --name "${{ vars.ACR_NAME }}"
+      - name: Build and push
+        run: docker buildx build --push -t "$IMAGE" .
+      - name: Record the running image for rollback
+        run: |
+          az containerapp show -n "${{ vars.CONTAINERAPP_NAME }}" -g "${{ vars.RESOURCE_GROUP }}" \
+            --query 'properties.template.containers[0].image' -o tsv > previous-image.txt
+          echo "previous image: $(cat previous-image.txt)"
+      - name: Update container app
+        id: update
+        run: |
+          az containerapp update -n "${{ vars.CONTAINERAPP_NAME }}" -g "${{ vars.RESOURCE_GROUP }}" --image "$IMAGE" \
+            --query properties.latestRevisionName -o tsv > revision.txt
+          echo "revision: $(cat revision.txt)"
+      - name: Wait for a healthy revision (5 min)
+        run: |
+          revision=$(cat revision.txt)
+          for _ in $(seq 1 60); do
+            health=$(az containerapp revision show -n "${{ vars.CONTAINERAPP_NAME }}" -g "${{ vars.RESOURCE_GROUP }}" \
+              --revision "$revision" --query properties.healthState -o tsv)
+            echo "$revision healthState=$health"
+            if [ "$health" = "Healthy" ]; then exit 0; fi
+            if [ "$health" = "Unhealthy" ]; then exit 1; fi
+            sleep 5
+          done
+          echo "revision $revision not healthy after 5 minutes"; exit 1
+      - uses: astral-sh/setup-uv@v6
+      - run: uv python install 3.12
+      - name: Deployed smoke
+        working-directory: backend
+        run: uv run tactistream-smoke deployed --base-url "${{ vars.APP_URL }}"
+      - name: Roll back to the previous image
+        if: failure() && steps.update.outcome == 'success'
+        run: |
+          az containerapp update -n "${{ vars.CONTAINERAPP_NAME }}" -g "${{ vars.RESOURCE_GROUP }}" \
+            --image "$(cat previous-image.txt)" -o none
+          echo "rolled back to $(cat previous-image.txt)"

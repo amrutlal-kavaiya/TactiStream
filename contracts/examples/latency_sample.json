@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "sample_id": "lat-fast_overlay-evt-0042-v-1a2b3c4d",
+  "match_id": "demo-blue-amber-001",
+  "kind": "fast_overlay",
+  "value_ms": 184,
+  "outcome": "released",
+  "target_id": "evt-0042",
+  "viewer_id": "v-1a2b3c4d",
+  "config": "live",
+  "recorded_ms": 1792310400000
+}

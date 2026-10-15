@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _REPO_ROOT = Path(__file__).parents[3]
@@ -42,6 +42,25 @@ class Settings(BaseSettings):
     azure_location: str | None = None
 
     applicationinsights_connection_string: str | None = None
+    azure_client_id: str | None = None
     azure_storage_account_url: str | None = None
     fabric_kusto_query_uri: str | None = None
     fabric_kusto_database: str | None = None
+
+    artifact_store: Literal["local", "blob"] = Field(
+        default="local", validation_alias="TACTISTREAM_ARTIFACT_STORE"
+    )
+    analytics_publish: bool = Field(default=False, validation_alias="TACTISTREAM_ANALYTICS_PUBLISH")
+    history: Literal["off", "memory", "eventhouse"] = Field(
+        default="memory", validation_alias="TACTISTREAM_HISTORY"
+    )
+    history_timeout_ms: int = Field(default=1500, gt=0, validation_alias="TACTISTREAM_HISTORY_TIMEOUT_MS")
+    environment: str = Field(default="dev", min_length=1, validation_alias="TACTISTREAM_ENVIRONMENT")
+
+    @model_validator(mode="after")
+    def _required_endpoints(self) -> Settings:
+        if self.artifact_store == "blob" and not self.azure_storage_account_url:
+            raise ValueError("AZURE_STORAGE_ACCOUNT_URL is required when TACTISTREAM_ARTIFACT_STORE=blob")
+        if self.history == "eventhouse" and not self.fabric_kusto_query_uri:
+            raise ValueError("FABRIC_KUSTO_QUERY_URI is required when TACTISTREAM_HISTORY=eventhouse")
+        return self

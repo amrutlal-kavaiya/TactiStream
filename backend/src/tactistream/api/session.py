@@ -155,7 +155,9 @@ class MatchSession:
             return None
         latency_ms = max(self._wall_ms() - receipt, 0)
         self._latency.record(
-            "fast_overlay", latency_ms, {"target_kind": ack.target_kind, "match_id": self.match_id}
+            "fast_overlay",
+            latency_ms,
+            {"target_kind": ack.target_kind, "target_id": ack.target_id, "match_id": self.match_id},
         )
         return latency_ms
 

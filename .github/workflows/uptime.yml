@@ -1,0 +1,30 @@
+name: uptime
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Judging window guard
+        id: window
+        run: |
+          if [ "$(date -u +%F)" \> "2026-11-11" ]; then echo "window over"; echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+      - if: steps.window.outputs.skip == 'false'
+        uses: actions/checkout@v4
+      - if: steps.window.outputs.skip == 'false'
+        uses: astral-sh/setup-uv@v6
+      - if: steps.window.outputs.skip == 'false'
+        run: uv python install 3.12
+      - if: steps.window.outputs.skip == 'false'
+        name: Deployed smoke
+        working-directory: backend
+        run: uv run tactistream-smoke deployed --base-url "${{ vars.APP_URL }}"

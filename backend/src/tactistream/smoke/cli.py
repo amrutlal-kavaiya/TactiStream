@@ -1,15 +1,16 @@
-"""`tactistream-smoke foundry|eventhubs`: exit 0 on a verified round-trip, 1 on failure, 2 on missing env."""
+"""`tactistream-smoke foundry|eventhubs|deployed`: exit 0 on success, 1 on failure, 2 on missing env."""
 
 from __future__ import annotations
 
 import asyncio
 import json
 from collections.abc import Coroutine
-from typing import Any
+from typing import Annotated, Any
 
 import typer
 
 from tactistream.settings import Settings
+from tactistream.smoke.deployed import DeployedSmokeError, run_deployed_smoke
 from tactistream.smoke.eventhubs import run_eventhubs_smoke
 from tactistream.smoke.foundry import run_foundry_smoke
 
@@ -17,7 +18,7 @@ app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
     pretty_exceptions_enable=False,
-    help="Prove Azure access: Foundry chat and Event Hubs round-trips.",
+    help="Prove Azure access (Foundry chat, Event Hubs round-trip) and check running deployments.",
 )
 
 
@@ -39,6 +40,10 @@ def run_or_exit[T](name: str, coroutine: Coroutine[Any, Any, T]) -> T:
     except Exception as exc:
         typer.echo(f"{name} smoke failed: {type(exc).__name__}: {exc}", err=True)
         raise typer.Exit(1) from None
+
+
+def _emit(summary: dict[str, Any]) -> None:
+    typer.echo(json.dumps(summary, separators=(",", ":")))
 
 
 @app.command()
@@ -90,3 +95,26 @@ def eventhubs() -> None:
     typer.echo(f"consumer_group: {result.consumer_group}")
     typer.echo(f"record_id: {result.record_id} (matched)")
     typer.echo(f"round_trip_ms: {result.round_trip_ms}")
+
+
+@app.command()
+def deployed(
+    base_url: Annotated[
+        str, typer.Option(help="App URL, e.g. https://tactistream.<env>.azurecontainerapps.io")
+    ],
+    allow_memory: Annotated[bool, typer.Option(help="Accept bus=memory (local image smoke).")] = False,
+    timeout_s: Annotated[float, typer.Option(help="HTTP and WebSocket connect timeout.")] = 30,
+    soak_s: Annotated[int, typer.Option(help="Keep the WebSocket open this long, counting heartbeats.")] = 0,
+) -> None:
+    """Healthz, session, WebSocket snapshot within 5 s, first event within 15 s after play."""
+    try:
+        result = asyncio.run(
+            run_deployed_smoke(base_url, allow_memory=allow_memory, timeout_s=timeout_s, soak_s=soak_s)
+        )
+    except DeployedSmokeError as exc:
+        _emit({"ok": False, "base_url": base_url, "reason": exc.reason})
+        raise typer.Exit(exc.exit_code) from None
+    except Exception as exc:
+        _emit({"ok": False, "base_url": base_url, "reason": f"unexpected {type(exc).__name__}: {exc}"})
+        raise typer.Exit(1) from None
+    _emit(result.summary())

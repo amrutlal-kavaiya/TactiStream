@@ -11,6 +11,7 @@ from tactistream.contracts import (
     CandidateMoment,
     FeedEnvelope,
     InsightPacket,
+    LatencySample,
     MatchEvent,
     MatchMetadata,
     MetricResult,
@@ -31,6 +32,7 @@ CASES: list[tuple[str, str, type[BaseModel]]] = [
     ("insight_packet.json", "insight_packet.schema.json", InsightPacket),
     ("recap.json", "recap.schema.json", Recap),
     ("feed_envelope_event.json", "feed_envelope.schema.json", FeedEnvelope),
+    ("latency_sample.json", "latency_sample.schema.json", LatencySample),
 ]
 
 
