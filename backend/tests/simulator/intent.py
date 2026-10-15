@@ -449,5 +449,6 @@ def check_tracking_gap(output: Any, label_window: Window) -> list[str]:
 LIBRARY: Mapping[str, IntentCheck] = {
     "space_creation": check_space_creation,
     "press_turnover": check_press_turnover,
+    "switch_escape": check_switch_escape,
 }
 """Every implemented scenario family and its intent check (the T047 library matrix)."""
