@@ -60,7 +60,8 @@ function errorKey(error: unknown): MessageKey {
   }
 }
 
-const formatBytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`
+const formatBytes = (bytes: number) =>
+  bytes < 1024 * 1024 ? `${String(Math.ceil(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`
 
 function recordMeta(record: MediaRecord): VideoMeta | null {
   const { duration_s, width, height } = record
