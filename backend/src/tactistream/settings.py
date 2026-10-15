@@ -5,10 +5,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _REPO_ROOT = Path(__file__).parents[3]
+PRESENTER_KEY_MIN_LENGTH = 16
 
 
 class Settings(BaseSettings):
@@ -57,6 +58,18 @@ class Settings(BaseSettings):
     history_timeout_ms: int = Field(default=1500, gt=0, validation_alias="TACTISTREAM_HISTORY_TIMEOUT_MS")
     environment: str = Field(default="dev", min_length=1, validation_alias="TACTISTREAM_ENVIRONMENT")
     presenter_key: SecretStr | None = Field(default=None, validation_alias="TACTISTREAM_PRESENTER_KEY")
+
+    @field_validator("presenter_key", mode="before")
+    @classmethod
+    def _presenter_key_strength(cls, value: object) -> object:
+        if isinstance(value, str):
+            value = value.strip()
+            if len(value) < PRESENTER_KEY_MIN_LENGTH:
+                raise ValueError(
+                    f"TACTISTREAM_PRESENTER_KEY must be at least {PRESENTER_KEY_MIN_LENGTH} characters "
+                    "(leave it empty to disable presenter mode)"
+                )
+        return value
 
     @model_validator(mode="after")
     def _required_endpoints(self) -> Settings:

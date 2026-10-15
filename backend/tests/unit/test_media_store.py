@@ -222,10 +222,10 @@ def test_build_media_store_blob_uses_injected_factory(tmp_path: Path) -> None:
 
 
 def test_presenter_key_setting_is_secret(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("TACTISTREAM_PRESENTER_KEY", "s3cret-value")
+    monkeypatch.setenv("TACTISTREAM_PRESENTER_KEY", "s3cret-value-long")
     s = Settings(_env_file=None)
     assert s.presenter_key is not None
-    assert s.presenter_key.get_secret_value() == "s3cret-value"
-    assert "s3cret-value" not in repr(s)
+    assert s.presenter_key.get_secret_value() == "s3cret-value-long"
+    assert "s3cret-value-long" not in repr(s)
     monkeypatch.setenv("TACTISTREAM_PRESENTER_KEY", "")
     assert Settings(_env_file=None).presenter_key is None

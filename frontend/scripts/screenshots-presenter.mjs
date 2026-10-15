@@ -1,5 +1,5 @@
 // Captures docs/screenshots/009-presenter.png and 009-watch.png from a local server started with a presenter key:
-// `BASE_URL=http://localhost:8400 PRESENTER_KEY=dev node scripts/screenshots-presenter.mjs`.
+// `BASE_URL=http://localhost:8400 PRESENTER_KEY=local-presenter-key node scripts/screenshots-presenter.mjs`.
 // It publishes the e2e sample media and clears it afterwards, so it refuses to run against anything but localhost.
 import { mkdir, readFile } from 'node:fs/promises'
 import { chromium, request as http } from '@playwright/test'

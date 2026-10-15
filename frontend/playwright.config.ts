@@ -8,7 +8,7 @@ import { defineConfig, devices } from '@playwright/test'
 const port = Number(process.env.E2E_PORT ?? 8000)
 const baseURL = `http://localhost:${String(port)}`
 
-const PRESENTER_KEY = 'e2e-key'
+const PRESENTER_KEY = 'e2e-presenter-key-0001'
 
 // Each run gets a fresh data dir so presenter media never leaks between runs or into the repo's data/.
 // The config is loaded again in every worker; only the main process's copy reaches the webServer.

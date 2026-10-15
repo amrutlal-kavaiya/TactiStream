@@ -5,7 +5,7 @@ import { type APIRequestContext, expect, type Locator, type Page, test } from '@
 import { seriousViolations } from './axe.ts'
 
 // Matches TACTISTREAM_PRESENTER_KEY in playwright.config.ts.
-const KEY = 'e2e-key'
+const KEY = 'e2e-presenter-key-0001'
 const headers = { 'X-Presenter-Key': KEY }
 const fixture = (name: string) => new URL(`./fixtures/${name}`, import.meta.url).pathname
 const BACKUP_URL = 'https://youtu.be/e2e-backup'

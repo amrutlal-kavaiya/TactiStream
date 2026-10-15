@@ -11,7 +11,8 @@ is published, the match app header also shows a **Watch demo video** button.
 ## Set the key
 
 The key is a Container Apps secret. It never goes in git or logs. The browser keeps it in `sessionStorage` only, so
-closing the tab forgets it. Use a long random value:
+closing the tab forgets it. Use a long random value; the server refuses to start with a key shorter than 16
+characters (surrounding whitespace is stripped):
 
 ```bash
 KEY=$(openssl rand -base64 24)
@@ -41,7 +42,7 @@ Secret changes don't restart a running revision. After rotating a key whose env 
 To disable presenter mode, run `azd env set TACTISTREAM_PRESENTER_KEY ""` and then `azd provision`. Already-published
 media stays visible at `/watch` until you unpublish it, so turn **Publish** off first if it should disappear.
 
-Locally, put `TACTISTREAM_PRESENTER_KEY=dev` in `.env`, run `make dev`, and open http://localhost:5173/presenter.
+Locally, put `TACTISTREAM_PRESENTER_KEY=local-presenter-key` (at least 16 characters) in `.env`, run `make dev`, and open http://localhost:5173/presenter.
 
 ## Use the page
 
