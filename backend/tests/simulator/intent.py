@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 import numpy as np
@@ -90,6 +90,13 @@ class Tracks:
         return out
 
 
+def relabel(output: Any, **key_players: str) -> Any:
+    """A copy of `output` whose first manifest segment names different key players."""
+    first, *rest = output.manifest.segments
+    label = replace(first, key_players={**first.key_players, **key_players})
+    return replace(output, manifest=replace(output.manifest, segments=(label, *rest)))
+
+
 def _tracks(frames: Tracks | Sequence[TrackingFrame]) -> Tracks:
     return frames if isinstance(frames, Tracks) else Tracks.from_frames(frames)
 
@@ -105,6 +112,15 @@ def nearest_opponent_distance(frames: Tracks | Sequence[TrackingFrame], player_i
         return float("nan")
     others = tracks.team_at(_opponent(player_id.split("-")[0]), t_ms).values()
     return min((math.dist(me, o) for o in others), default=float("inf"))
+
+
+def nearest_opponent(frames: Tracks | Sequence[TrackingFrame], player_id: str, t_ms: int) -> str | None:
+    tracks = _tracks(frames)
+    me = tracks.at(player_id, t_ms)
+    if me is None:
+        return None
+    others = tracks.team_at(_opponent(player_id.split("-")[0]), t_ms)
+    return min(others, key=lambda pid: math.dist(me, others[pid]), default=None)
 
 
 def _pressure_on(tracks: Tracks, player_id: str, t_ms: int) -> float:
@@ -171,6 +187,7 @@ class _Context:
         )
         variant = label.variant if label is not None else output.config.variant
         self.label = label
+        self.keys: Mapping[str, str] = label.key_players if label is not None else {}
         self.focus = VARIANTS[variant].focus_team
         self.opp = _opponent(self.focus)
         self.events: list[MatchEvent] = [
@@ -197,6 +214,13 @@ class _Context:
                 found.append(event)
             state = nxt
         return found
+
+    def identity(self, role: str, actual: str | None) -> list[str]:
+        """Failure if the manifest names a different player for `role`."""
+        expected = self.keys.get(role)
+        if expected is None or actual == expected:
+            return []
+        return [f"{role} is {actual}, manifest key_players says {expected}"]
 
     def lane(self, passer: str, receiver: str, t_ms: int) -> float:
         a, b = self.tracks.at(passer, t_ms), self.tracks.at(receiver, t_ms)
@@ -235,6 +259,7 @@ def _space_checks(output: Any, window: Window, *, negative: bool) -> list[str]:
     if shot.session_clock_ms - t_pass > 6000:
         failures.append(f"shot {shot.session_clock_ms - t_pass} ms after the forward pass (> 6000)")
     assert fwd.recipient_id is not None
+    failures += ctx.identity("passer", fwd.player_id) + ctx.identity("receiver", fwd.recipient_id)
     candidates = [
         pid
         for pid in ctx.tracks.positions
@@ -243,11 +268,14 @@ def _space_checks(output: Any, window: Window, *, negative: bool) -> list[str]:
     run = best_run(ctx.tracks, candidates, (t_pass - 4000, t_pass), attack_dir=ctx.attack_dir)
     if run is None:
         failures.append("no off-ball run >= 10 m within 3.2 s at >= 4.3 m/s and 30-60 degrees")
-    elif not negative:
+    else:
+        failures += ctx.identity("runner", run.player_id)
+    if run is not None and not negative:
         runner_at = ctx.tracks.at(run.player_id, run.start_ms)
         opponents = ctx.tracks.team_at(ctx.opp, run.start_ms)
         assert runner_at is not None
         follower = min(opponents, key=lambda pid: math.dist(opponents[pid], runner_at))
+        failures += ctx.identity("follower", follower)
         a, b = ctx.tracks.at(follower, run.start_ms), ctx.tracks.at(follower, run.end_ms)
         if a is None or b is None:
             failures.append(f"follower {follower} not visible over the run")
@@ -291,7 +319,7 @@ def check_press_turnover(output: Any, label_window: Window) -> list[str]:
     if not before:
         return ["no opponent on-ball event before the turnover"]
     last = before[-1]
-    failures: list[str] = []
+    failures = ctx.identity("victim", last.player_id) + ctx.identity("interceptor", turnover.player_id)
     gap = turnover.session_clock_ms - last.session_clock_ms
     if gap > 3000:
         failures.append(f"turnover {gap} ms after the victim's last on-ball event (> 3000)")
@@ -309,6 +337,9 @@ def check_press_no_turnover(output: Any, label_window: Window) -> list[str]:
     ]
     if not pressed:
         return ["no opponent on-ball event under pressure >= 40"]
+    victim = ctx.keys.get("victim")
+    if victim is not None and all(e.player_id != victim for e in pressed):
+        return [f"victim {victim} (manifest key_players) never under pressure >= 40"]
     for e in pressed:
         if any(e.session_clock_ms < t <= e.session_clock_ms + 5000 for t in turnovers):
             return [f"focus-team turnover within 5000 ms of pressed event {e.event_id}"]
@@ -334,8 +365,11 @@ def check_switch_escape(output: Any, label_window: Window) -> list[str]:
         return ["no completed focus-team pass with |dy| >= 34 m"]
     switch = switches[0]
     assert switch.recipient_id is not None
+    failures = ctx.identity("switcher", switch.player_id) + ctx.identity("receiver", switch.recipient_id)
     distance = nearest_opponent_distance(ctx.tracks, switch.recipient_id, _arrival(switch))
-    return [] if distance >= 7.0 else [f"receiver's nearest opponent {distance:.2f} m < 7 at reception"]
+    if not distance >= 7.0:
+        failures.append(f"receiver's nearest opponent {distance:.2f} m < 7 at reception")
+    return failures
 
 
 def check_switch_closed(output: Any, label_window: Window) -> list[str]:
@@ -346,7 +380,8 @@ def check_switch_closed(output: Any, label_window: Window) -> list[str]:
     switch = switches[0]
     assert switch.recipient_id is not None
     reception = _arrival(switch)
-    failures: list[str] = []
+    failures = ctx.identity("switcher", switch.player_id) + ctx.identity("receiver", switch.recipient_id)
+    failures += ctx.identity("closer", nearest_opponent(ctx.tracks, switch.recipient_id, reception))
     distance = nearest_opponent_distance(ctx.tracks, switch.recipient_id, reception)
     if not distance <= 3.5:
         failures.append(f"receiver's nearest opponent {distance:.2f} m > 3.5 at reception")
@@ -360,6 +395,8 @@ def check_switch_closed(output: Any, label_window: Window) -> list[str]:
     ]
     if not tackles:
         failures.append("no opponent tackle won within 2000 ms of reception")
+    else:
+        failures += ctx.identity("closer", tackles[0].player_id)
     pressure = _pressure_on(ctx.tracks, switch.recipient_id, reception)
     if not pressure < 30.0:
         failures.append(f"pressure on receiver at reception {pressure:.1f} >= 30")

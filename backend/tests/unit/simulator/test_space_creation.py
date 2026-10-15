@@ -1,5 +1,5 @@
 import pytest
-from simulator.intent import check_space_creation
+from simulator.intent import check_space_creation, relabel
 
 from tactistream.simulator.config import SimulationConfig
 from tactistream.simulator.engine import simulate
@@ -28,6 +28,14 @@ def test_hero_events_and_frames() -> None:
     report = validate_output(out)
     assert report.ok, [i.line() for i in report.issues]
     assert check_space_creation(out, _window(out)) == []
+
+
+@pytest.mark.parametrize("role", ["runner", "follower", "passer", "receiver"])
+def test_intent_check_confirms_manifest_key_players(role: str) -> None:
+    out = simulate(SimulationConfig(42, "space_creation"))
+    wrong = relabel(out, **{role: "blue-07" if role != "follower" else "amber-02"})
+    failures = check_space_creation(wrong, _window(out))
+    assert any(role in f for f in failures), failures
 
 
 @pytest.mark.parametrize("variant", ["A", "B", "C"])
