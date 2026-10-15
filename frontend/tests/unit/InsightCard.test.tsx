@@ -74,6 +74,22 @@ describe('InsightCard', () => {
     expect(onOpenEvidence).toHaveBeenCalledWith('met-fp-evt-0042')
   })
 
+  it('opens evidence with Space', async () => {
+    const user = userEvent.setup()
+    const onOpenEvidence = vi.fn()
+    render(<InsightCard packet={fanEnglish()} onOpenEvidence={onOpenEvidence} />)
+
+    screen.getByRole('button', { name: 'evt-0042' }).focus()
+    await user.keyboard(' ')
+    expect(onOpenEvidence).toHaveBeenCalledWith('evt-0042')
+  })
+
+  it('is an article labelled by the server title', () => {
+    render(<InsightCard packet={fanEnglish()} onOpenEvidence={vi.fn()} />)
+
+    expect(screen.getByRole('article', { name: 'ins-0042 title fan en' })).toBeInTheDocument()
+  })
+
   it('reports the card as displayed once, after the first paint', () => {
     const onDisplayed = vi.fn()
     const packet = fanEnglish()

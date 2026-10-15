@@ -1,7 +1,10 @@
+import { Badge, Body1, Button, Card, CardHeader, makeStyles, Text, tokens } from '@fluentui/react-components'
+import { CheckmarkCircle16Regular, DocumentSearch16Regular } from '@fluentui/react-icons'
 import { useEffect, useEffectEvent, useId } from 'react'
 
 import type { InsightPacket } from '../contracts/generated'
 import { useT } from '../i18n/useT'
+import { SourceBadge } from './SourceBadge'
 
 export interface InsightCardProps {
   packet: InsightPacket
@@ -9,8 +12,22 @@ export interface InsightCardProps {
   onDisplayed?: (packet: InsightPacket) => void
 }
 
+const useStyles = makeStyles({
+  card: {
+    borderLeft: `${tokens.strokeWidthThickest} solid ${tokens.colorBrandStroke1}`,
+    boxShadow: tokens.shadow8,
+    rowGap: tokens.spacingVerticalM,
+  },
+  labels: { display: 'flex', flexWrap: 'wrap', gap: tokens.spacingHorizontalS },
+  title: { margin: 0 },
+  body: { margin: 0 },
+  chips: { display: 'flex', flexWrap: 'wrap', gap: tokens.spacingHorizontalS },
+  chip: { fontFamily: tokens.fontFamilyMonospace },
+})
+
 export function InsightCard({ packet, onOpenEvidence, onDisplayed }: InsightCardProps) {
   const t = useT()
+  const styles = useStyles()
   const titleId = useId()
   const reportDisplayed = useEffectEvent(() => onDisplayed?.(packet))
 
@@ -24,38 +41,50 @@ export function InsightCard({ packet, onOpenEvidence, onDisplayed }: InsightCard
   }, [packet.insight_id, packet.insight_version])
 
   return (
-    <article
-      className="insight-card"
+    <Card
+      className={styles.card}
+      role="article"
       aria-labelledby={titleId}
       lang={packet.language}
       data-testid="insight-card"
     >
-      <div className="insight-card__labels">
-        {packet.labels?.includes('synthetic') && (
-          <span className="label label--synthetic">{t('synthetic')}</span>
-        )}
-        {packet.claim_status === 'verified_fact' && (
-          <span className="label label--verified">{t('verifiedFact')}</span>
-        )}
-      </div>
-      <h2 id={titleId} className="insight-card__title">
-        {packet.title}
-      </h2>
-      <p className="insight-card__body">{packet.body}</p>
-      <div className="chips" role="group" aria-label={t('evidence')}>
+      <CardHeader
+        header={
+          <Text as="h2" id={titleId} size={400} weight="semibold" className={styles.title}>
+            {packet.title}
+          </Text>
+        }
+        description={
+          <div className={styles.labels}>
+            {packet.labels?.includes('synthetic') && <SourceBadge kind="synthetic" />}
+            {packet.claim_status === 'verified_fact' && (
+              <Badge appearance="tint" color="success" shape="rounded" icon={<CheckmarkCircle16Regular />}>
+                {t('verifiedFact')}
+              </Badge>
+            )}
+          </div>
+        }
+      />
+      <Body1 as="p" className={styles.body}>
+        {packet.body}
+      </Body1>
+      <div className={styles.chips} role="group" aria-label={t('evidence')}>
         {packet.evidence_ids.map((id) => (
-          <button
+          <Button
             key={id}
-            type="button"
-            className="chip"
+            size="small"
+            appearance="outline"
+            shape="circular"
+            icon={<DocumentSearch16Regular />}
+            className={styles.chip}
             onClick={() => {
               onOpenEvidence(id)
             }}
           >
             {id}
-          </button>
+          </Button>
         ))}
       </div>
-    </article>
+    </Card>
   )
 }

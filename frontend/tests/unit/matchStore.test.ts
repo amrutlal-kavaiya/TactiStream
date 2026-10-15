@@ -156,3 +156,18 @@ describe('startSession', () => {
     expect(state.prefs).toEqual({ mode: 'analyst', language: 'hi' })
   })
 })
+
+describe('connection and playback status', () => {
+  it('tracks the socket connection and resets it with a new session', () => {
+    store.getState().setConnected(true)
+    expect(store.getState().connected).toBe(true)
+
+    store.getState().startSession('other')
+    expect(store.getState().connected).toBe(false)
+  })
+
+  it('takes playback from a control response', () => {
+    store.getState().setPlayback({ state: 'paused', speed: 1, seed: 42 })
+    expect(store.getState().playback?.state).toBe('paused')
+  })
+})

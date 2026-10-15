@@ -1,3 +1,4 @@
+import { makeStyles, MessageBar, MessageBarBody, Text, tokens } from '@fluentui/react-components'
 import { useEffect, useRef, useState } from 'react'
 
 import {
@@ -13,12 +14,48 @@ import { MatchSocket } from './api/socket'
 import { EventList } from './components/EventList'
 import { EvidenceDrawer } from './components/EvidenceDrawer'
 import { InsightCard } from './components/InsightCard'
+import { PitchPlaceholder } from './components/PitchPlaceholder'
 import { PlaybackControls } from './components/PlaybackControls'
-import { TopBar } from './components/TopBar'
+import { type ConnectionStatus, TopBar } from './components/TopBar'
 import type { InsightPacket } from './contracts/generated'
 import type { MessageKey } from './i18n/en'
-import { useT } from './i18n/useT'
-import { useMatchStore } from './store/matchStore'
+import { formatClock, useT } from './i18n/useT'
+import { type Playback, useMatchStore } from './store/matchStore'
+import { AppShell } from './theme/AppShell'
+import { useThemePreference } from './theme/useThemePreference'
+
+const START_ERRORS = new Set<MessageKey>([
+  'errorInvalidScenario',
+  'errorStartTimeout',
+  'errorNetwork',
+  'errorStart',
+])
+
+const useStyles = makeStyles({
+  commandBar: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.spacingHorizontalL,
+    padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalXL}`,
+  },
+  clock: { color: tokens.colorNeutralForeground2 },
+  clockValue: {
+    color: tokens.colorNeutralForeground1,
+    fontFamily: tokens.fontFamilyMonospace,
+    fontVariantNumeric: 'tabular-nums',
+  },
+})
+
+function connectionStatus(
+  matchId: string | null,
+  connected: boolean,
+  playback: Playback | null,
+): ConnectionStatus {
+  if (matchId === null || !connected) return 'offline'
+  return playback?.state === 'playing' ? 'live' : 'paused'
+}
 
 function startErrorKey(error: unknown): MessageKey {
   if (!(error instanceof ApiError)) return 'errorStart'
@@ -36,7 +73,12 @@ function startErrorKey(error: unknown): MessageKey {
 
 export default function App() {
   const t = useT()
+  const styles = useStyles()
+  const { themeName, toggleTheme } = useThemePreference()
   const matchId = useMatchStore((s) => s.matchId)
+  const connected = useMatchStore((s) => s.connected)
+  const playback = useMatchStore((s) => s.playback)
+  const sessionClockMs = useMatchStore((s) => s.sessionClockMs)
   const language = useMatchStore((s) => s.prefs.language)
   const packet = useMatchStore((s) => s.variantFor(s.prefs))
   const [starting, setStarting] = useState(false)
@@ -75,11 +117,15 @@ export default function App() {
           useMatchStore.getState().applyMessage(message)
         },
         getLastSeq: () => useMatchStore.getState().lastSeq,
+        onConnectionChange: (isConnected) => {
+          useMatchStore.getState().setConnected(isConnected)
+        },
       })
       socketRef.current = socket
       socket.connect()
       try {
-        await control(session.match_id, 'play')
+        const response = await control(session.match_id, 'play')
+        useMatchStore.getState().setPlayback(response.playback)
       } catch {
         setErrorKey('errorPlayNotStarted')
       }
@@ -92,7 +138,8 @@ export default function App() {
     if (!matchId) return
     setErrorKey(null)
     try {
-      await control(matchId, action)
+      const response = await control(matchId, action)
+      useMatchStore.getState().setPlayback(response.playback)
     } catch {
       setErrorKey('errorControl')
     }
@@ -108,50 +155,65 @@ export default function App() {
   }
 
   return (
-    <>
-      <div className="app" inert={evidenceId !== null}>
-        <TopBar />
-        <main className="main">
-          <div className="panel">
-            <div className="controls">
-              <button
-                type="button"
-                className="button button--primary"
-                disabled={starting}
-                onClick={() => void start()}
-              >
-                {starting ? t('starting') : t('startDemo')}
-              </button>
-              <PlaybackControls
-                disabled={matchId === null}
-                onControl={(action) => void sendControl(action)}
-              />
-            </div>
-            {errorKey && (
-              <p className="error" role="alert">
-                {t(errorKey)}
-              </p>
-            )}
-            {matchId === null && !errorKey && <p className="muted">{t('idleHint')}</p>}
-          </div>
-          <EventList />
+    <AppShell
+      themeName={themeName}
+      inert={evidenceId !== null}
+      header={
+        <TopBar
+          status={connectionStatus(matchId, connected, playback)}
+          themeName={themeName}
+          onToggleTheme={toggleTheme}
+        />
+      }
+      commandBar={
+        <div className={styles.commandBar}>
+          <PlaybackControls
+            starting={starting}
+            disabled={matchId === null}
+            onStart={() => void start()}
+            onControl={(action) => void sendControl(action)}
+          />
+          <Text className={styles.clock}>
+            {t('sessionClock')}{' '}
+            <time className={styles.clockValue} data-testid="session-clock">
+              {formatClock(sessionClockMs)}
+            </time>
+          </Text>
+        </div>
+      }
+      stage={
+        <>
+          {errorKey && (
+            <MessageBar intent={START_ERRORS.has(errorKey) ? 'error' : 'warning'} role="alert">
+              <MessageBarBody>{t(errorKey)}</MessageBarBody>
+            </MessageBar>
+          )}
+          <PitchPlaceholder hint={matchId === null ? t('idleHint') : t('pitchPlaceholderHint')} />
+        </>
+      }
+      rail={
+        <>
           <div aria-live="polite">
             {packet && (
               <InsightCard packet={packet} onOpenEvidence={setEvidenceId} onDisplayed={acknowledge} />
             )}
           </div>
-        </main>
-      </div>
-      {evidenceId && matchId && (
-        <EvidenceDrawer
-          key={evidenceId}
-          evidenceId={evidenceId}
-          load={(id) => getEvidence(matchId, id, language)}
-          onClose={() => {
-            setEvidenceId(null)
-          }}
-        />
-      )}
-    </>
+          <EventList />
+        </>
+      }
+      overlay={
+        evidenceId &&
+        matchId && (
+          <EvidenceDrawer
+            key={evidenceId}
+            evidenceId={evidenceId}
+            load={(id) => getEvidence(matchId, id, language)}
+            onClose={() => {
+              setEvidenceId(null)
+            }}
+          />
+        )
+      }
+    />
   )
 }

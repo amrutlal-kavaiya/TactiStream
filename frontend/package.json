@@ -12,14 +12,18 @@
     "format": "prettier --write .",
     "typecheck": "tsc -b --noEmit",
     "e2e": "playwright test",
-    "contracts:gen": "node scripts/gen-contracts.mjs"
+    "contracts:gen": "node scripts/gen-contracts.mjs",
+    "screenshots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
+    "@fluentui/react-components": "9.74.9",
+    "@fluentui/react-icons": "2.0.344",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.0",
     "@testing-library/dom": "^10.4.2",

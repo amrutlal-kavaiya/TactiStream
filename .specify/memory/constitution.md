@@ -1,5 +1,12 @@
 <!--
 Sync Impact Report
+- Version change: 1.1.0 → 1.2.0 (2026-10-14, user-requested Microsoft-style UI)
+- Modified: Technology & Platform Constraints → Frontend: Fluent UI React v9 (+ Fluent icons) is the component
+  library; dark theme default with light toggle
+- Templates: no changes required. Affected specs: 001 (Phase 7, T057–T063), 005/006/008 (use the Fluent component
+  map in specs/README.md). Design: docs/superpowers/specs/2026-10-14-fluent-ui-design.md
+
+Previous report
 - Version change: 1.0.0 → 1.1.0 (2026-10-14, spec review)
 - Modified: Technology & Platform Constraints → Security: one bounded exception for the Fabric Eventstream source
 - Templates: no changes required. Affected spec: 007-azure-platform (Complexity Tracking, T061)
@@ -103,6 +110,8 @@ stories, synchronized 3D replays, and personalized recaps. Source of product int
 
 - Backend: Python 3.12, FastAPI, Pydantic v2, NumPy, uv for dependency management (lockfile committed).
 - Frontend: TypeScript 5 (strict), React 19, Vite, three.js via @react-three/fiber, Zustand.
+  UI components: Fluent UI React v9 (`@fluentui/react-components`, `@fluentui/react-icons`, exact-pinned) with a
+  TactiStream brand theme; dark by default with a light toggle. No other UI component library.
 - Agents: Microsoft Agent Framework (Python) with models served by a Microsoft Foundry deployment.
   The exact package version and model deployment are pinned in `specs/001-walking-skeleton/research.md`.
 - Transport: Azure Event Hubs (partition key = `match_id`; consumer groups `live-state`, `fabric`).
@@ -140,4 +149,4 @@ stories, synchronized 3D replays, and personalized recaps. Source of product int
 - Organizer rules (official hackathon rules and Innovation Studio instructions) override this document
   wherever they conflict.
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-14
+**Version**: 1.2.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-14

@@ -162,3 +162,24 @@ describe('MatchSocket', () => {
     ])
   })
 })
+
+describe('MatchSocket connection status', () => {
+  it('reports open, drop and close through onConnectionChange', () => {
+    const changes: boolean[] = []
+    const socket = new MatchSocket({
+      url: 'ws://test/ws/matches/m1',
+      onMessage: vi.fn(),
+      getLastSeq: () => 0,
+      onConnectionChange: (connected) => changes.push(connected),
+      WebSocketImpl: MockWebSocket as unknown as typeof WebSocket,
+    })
+    socket.connect()
+    latest().open()
+    latest().drop()
+    vi.advanceTimersByTime(500)
+    latest().open()
+    socket.close()
+
+    expect(changes).toEqual([true, false, true, false])
+  })
+})

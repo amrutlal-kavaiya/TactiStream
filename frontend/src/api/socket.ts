@@ -10,6 +10,7 @@ export interface MatchSocketOptions {
   url: string
   onMessage: (message: ServerMessage) => void
   getLastSeq: () => number
+  onConnectionChange?: (connected: boolean) => void
   WebSocketImpl?: typeof WebSocket
 }
 
@@ -18,6 +19,7 @@ export class MatchSocket {
   private readonly options: MatchSocketOptions
   private ws: WebSocket | null = null
   private connectedOnce = false
+  private connected = false
   private closed = false
   private backoffMs = BACKOFF_START_MS
   private reconnectTimer: ReturnType<typeof setTimeout> | undefined
@@ -36,6 +38,7 @@ export class MatchSocket {
     ws.onopen = () => {
       if (this.connectedOnce) this.send({ type: 'resume', last_seq: this.options.getLastSeq() })
       this.connectedOnce = true
+      this.setConnected(true)
       this.flushAcks()
       this.armWatchdog()
     }
@@ -70,6 +73,13 @@ export class MatchSocket {
     clearTimeout(this.reconnectTimer)
     clearTimeout(this.silenceTimer)
     this.detach()?.close()
+    this.setConnected(false)
+  }
+
+  private setConnected(connected: boolean) {
+    if (this.connected === connected) return
+    this.connected = connected
+    this.options.onConnectionChange?.(connected)
   }
 
   private send(message: ClientMessage): boolean {
@@ -105,6 +115,7 @@ export class MatchSocket {
   private handleDrop() {
     clearTimeout(this.silenceTimer)
     this.detach()
+    this.setConnected(false)
     if (this.closed) return
     const delay = this.backoffMs
     this.backoffMs = Math.min(this.backoffMs * 2, BACKOFF_MAX_MS)

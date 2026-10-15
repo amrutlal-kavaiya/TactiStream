@@ -1,22 +1,12 @@
+/* App-only colours. Everything else comes from the Fluent theme (tokens.* in makeStyles). */
 :root {
-  --color-surface: #0f172a;
-  --color-surface-raised: #1e293b;
-  --color-border: #475569;
-  --color-text: #f1f5f9;
-  --color-text-muted: #cbd5e1;
-  --color-blue: #3b82f6;
-  --color-amber: #f59e0b;
-  --color-on-accent: #0f172a;
-  --color-link: #93c5fd;
-  --color-danger: #fca5a5;
-  --color-focus: #f59e0b;
+  --ts-team-blue: #3b82f6;
+  --ts-team-amber: #f59e0b;
+  --ts-pitch-grass: #166534;
+  --ts-pitch-line: #e2e8f0;
+}
 
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-6: 1.5rem;
-  --radius: 0.5rem;
-  --font-sans: system-ui, -apple-system, 'Segoe UI', 'Noto Sans', 'Noto Sans Devanagari', sans-serif;
-  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+/* Amber falls below 3:1 on light surfaces; a darker amber keeps team swatches visible. */
+[data-theme='light'] {
+  --ts-team-amber: #b45309;
 }

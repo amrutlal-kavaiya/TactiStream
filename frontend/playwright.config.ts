@@ -2,7 +2,9 @@ import { resolve } from 'node:path'
 
 import { defineConfig, devices } from '@playwright/test'
 
-const baseURL = 'http://localhost:8000'
+// Other worktrees may hold :8000; `E2E_PORT=8100 npx playwright test` runs on a free port.
+const port = Number(process.env.E2E_PORT ?? 8000)
+const baseURL = `http://localhost:${String(port)}`
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -15,10 +17,11 @@ export default defineConfig({
   use: { baseURL, trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'npm run build && cd ../backend && uv run tactistream-api',
+    // `tactistream-api` always binds :8000, so the app factory is served directly to honour the port.
+    command: `npm run build && cd ../backend && uv run uvicorn tactistream.api.app:create_app --factory --host 127.0.0.1 --port ${String(port)}`,
     env: { TACTISTREAM_STATIC_DIR: resolve(import.meta.dirname, 'dist') },
     url: `${baseURL}/healthz`,
-    // Never reuse a server on :8000: it may be serving a stale dist or a dev backend without one.
+    // Never reuse a server on the port: it may be serving a stale dist or a dev backend without one.
     reuseExistingServer: false,
     timeout: 120_000,
   },

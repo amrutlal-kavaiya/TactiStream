@@ -109,7 +109,7 @@ description: "Task list for 001 walking skeleton"
 ## Phase 5: User Story 3 — Contract-first CI (P2)
 
 - [x] T052 [US3] Extend `.github/workflows/ci.yml`: job `contracts` (backend contract tests + `npm run contracts:gen` + `git diff --exit-code`), job `e2e` (install Playwright chromium, build frontend, run `npm run e2e`), cache uv and npm; all jobs on push and PR to `main` (push widened to every branch; `contracts` runs `make contracts`)
-- [ ] T053 [US3] On a throwaway branch rename `MatchEvent.player_id` → `actor_id`; confirm CI fails in `contracts`; delete branch; note the run URL in the PR description (SC-005) — (local proof done; GitHub run URL pending first push)
+- [x] T053 [US3] On a throwaway branch rename `MatchEvent.player_id` → `actor_id`; confirm CI fails in `contracts`; delete branch; note the run URL in the PR description (SC-005) — CI failed in `contracts` (and backend, e2e) on 2026-10-15: https://github.com/amrutlal-kavaiya/TactiStream/actions/runs/38672001218
 
 ---
 
@@ -118,6 +118,21 @@ description: "Task list for 001 walking skeleton"
 - [x] T054 [P] Update `README.md`: one-paragraph pitch, Synthetic-data disclaimer, quickstart (`make install && make dev`), test commands, link to `specs/README.md` and constitution
 - [x] T055 [P] Run quickstart.md on a fresh clone (new codespace or `git clone` to /tmp) and fix any gaps (local `git clone` to /tmp, 2026-10-14)
 - [ ] T056 Update `specs/README.md` feature table: mark 001 exit condition met with date — (partial status recorded 14 Oct; tick when T050, T051 and the first GitHub CI run are green)
+
+---
+
+## Phase 7: Fluent UI shell (user request 2026-10-14; constitution 1.2.0)
+
+**Goal**: professional Microsoft (Fluent 2) look per `docs/superpowers/specs/2026-10-14-fluent-ui-design.md`, with
+every US1 behaviour and test unchanged.
+
+- [x] T057 Add exact-pinned `@fluentui/react-components` and `@fluentui/react-icons` (and dev `@axe-core/playwright`) to `frontend/package.json`; record pre-change gzipped JS bundle size in the batch report
+- [x] T058 Write failing `frontend/tests/unit/theme.test.tsx`: default theme dark; toggle switches to light and persists `localStorage["tactistream.theme"]`; stored value wins over `prefers-color-scheme`; with nothing stored `prefers-color-scheme: light` selects light; brand theme objects come from `createDarkTheme`/`createLightTheme` with a 16-step `BrandVariants` ramp (keys 10…160) where `brand[80] === "#3B82F6"` and steps are monotonically lighter
+- [x] T059 Implement `frontend/src/theme/{brand.ts,useThemePreference.ts,AppShell.tsx}` (FluentProvider, grid layout: header, command bar, stage + 360 px right rail, stacks below 900 px); run T058 → green
+- [x] T060 Update `frontend/tests/unit/{InsightCard,EvidenceDrawer,App}.test.tsx` to Fluent roles where markup changes (behaviour assertions unchanged, StrictMode/inert focus-return test kept) and extend `tokens.test.ts`: team colours and text vs `colorNeutralBackground1`/`colorNeutralBackground2` of both brand themes ≥ 4.5:1 for text, ≥ 3:1 for non-text team swatches
+- [x] T061 Rebuild `TopBar`, `SourceBadge`, `PlaybackControls` (Toolbar + icons + tooltips), `InsightCard` (Card), `EvidenceDrawer` (OverlayDrawer), `EventList` (Table) and notices (MessageBar) per the registry component map; stage shows a placeholder Card "Pitch view arrives with tactical replay"; reduce `app.css` to reset + grid and `tokens.css` to team/pitch tokens; run unit suites → green
+- [x] T062 Extend `frontend/tests/e2e/skeleton.spec.ts`: existing flow unchanged + theme toggle switches and persists across reload + `@axe-core/playwright` scan (dark and light) with zero serious/critical violations; run `--repeat-each=5`
+- [x] T063 Capture screenshots (dark and light, card visible, drawer open) to `docs/screenshots/001-fluent-{dark,light,drawer}.png` via Playwright; record post-change gzipped bundle size in the batch report
 
 ---
 

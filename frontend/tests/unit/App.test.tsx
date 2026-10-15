@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -21,6 +21,7 @@ let calls: [string, unknown][]
 const json = (status: number, body: unknown) => () => new Response(JSON.stringify(body), { status })
 
 beforeEach(() => {
+  localStorage.clear()
   MockWebSocket.instances = []
   calls = []
   routes = {
@@ -106,9 +107,10 @@ describe('App', () => {
     )
 
     expect(screen.getByTestId('source-badge')).toHaveTextContent('Synthetic')
-    const events = screen.getByRole('list', { name: 'Events' })
-    expect(events.querySelectorAll('li')).toHaveLength(2)
-    expect(events).toHaveTextContent('pass')
+    const events = screen.getByRole('table', { name: 'Events' })
+    const rows = within(events).getAllByRole('row').slice(1)
+    expect(rows).toHaveLength(2)
+    expect(rows[1]).toHaveTextContent('pass')
     expect(screen.getByTestId('session-clock')).toHaveTextContent('00:03')
     expect(screen.getByRole('heading', { name: 'ins-0042 title fan en' })).toBeInTheDocument()
   })
@@ -187,10 +189,12 @@ describe('App', () => {
   })
 
   it('switches the card variant and chrome strings to Hindi', async () => {
-    const { user, ws } = await startMatch()
+    const { ws } = await startMatch()
     deliver(ws, snapshot(5), insightMessage(7, insight('ins-0042')))
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Language' }), 'hi')
+    act(() => {
+      useMatchStore.getState().setPrefs({ mode: 'fan', language: 'hi' })
+    })
 
     expect(screen.getByRole('heading', { name: 'ins-0042 title fan hi' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'डेमो मैच शुरू करें' })).toBeInTheDocument()
@@ -198,11 +202,69 @@ describe('App', () => {
   })
 
   it('switches the card variant to Analyst mode', async () => {
-    const { user, ws } = await startMatch()
+    const { ws } = await startMatch()
     deliver(ws, snapshot(5), insightMessage(7, insight('ins-0042')))
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Mode' }), 'analyst')
+    act(() => {
+      useMatchStore.getState().setPrefs({ mode: 'analyst', language: 'en' })
+    })
 
     expect(screen.getByRole('heading', { name: 'ins-0042 title analyst en' })).toBeInTheDocument()
+  })
+
+  it('does not render the mode or language controls before they are wired (006)', () => {
+    render(<App />)
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.queryByText('Analyst')).not.toBeInTheDocument()
+  })
+
+  it('groups Start, Play, Pause and Reset in the playback toolbar', () => {
+    render(<App />)
+    const toolbar = screen.getByRole('toolbar', { name: 'Playback' })
+    for (const name of ['Start demo match', 'Play', 'Pause', 'Reset']) {
+      expect(within(toolbar).getByRole('button', { name })).toBeInTheDocument()
+    }
+  })
+
+  it('shows the connection status as text: Offline, then Live, then Paused', async () => {
+    render(<App />)
+    expect(screen.getByTestId('connection-status')).toHaveTextContent('Offline')
+    cleanup()
+
+    const { user, ws } = await startMatch()
+    deliver(ws, snapshot(5, { playback: { state: 'playing', speed: 1, seed: 42 } }))
+    expect(screen.getByTestId('connection-status')).toHaveTextContent('Live')
+
+    routes[controlPath] = json(200, playback('paused'))
+    await user.click(screen.getByRole('button', { name: 'Pause' }))
+    await waitFor(() => {
+      expect(screen.getByTestId('connection-status')).toHaveTextContent('Paused')
+    })
+
+    act(() => {
+      ws.drop()
+    })
+    expect(screen.getByTestId('connection-status')).toHaveTextContent('Offline')
+  })
+
+  it('shows the match title from metadata and a pitch placeholder', async () => {
+    const { ws } = await startMatch()
+    deliver(ws, snapshot(5))
+    expect(screen.getByTestId('match-title')).toHaveTextContent('Blue vs Amber')
+    expect(screen.getByText('Pitch view arrives with tactical replay')).toBeInTheDocument()
+  })
+
+  it('switches between dark and light themes from the header', async () => {
+    localStorage.clear()
+    const user = userEvent.setup()
+    render(<App />)
+    const toggle = screen.getByRole('button', { name: 'Light theme' })
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByTestId('app-shell')).toHaveAttribute('data-theme', 'dark')
+
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('app-shell')).toHaveAttribute('data-theme', 'light')
+    expect(localStorage.getItem('tactistream.theme')).toBe('light')
   })
 })
