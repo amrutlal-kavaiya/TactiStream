@@ -87,7 +87,42 @@ def _fabricated_position(r: Records) -> Records:
     return r
 
 
+def _pass_end_off(r: Records) -> Records:
+    x, y = r.ball[20]  # type: ignore[misc]
+    r.ball[20] = (x, y + 1.0)
+    return rebuild_frames(r)
+
+
+def _off_pitch(r: Records) -> Records:
+    r.positions["amber-02"] = [(50.0, -3.0) for _ in r.positions["amber-02"]]
+    return rebuild_frames(r)
+
+
+def _skip_sequence(r: Records) -> Records:
+    r.events[2] = r.events[2].model_copy(update={"sequence": 4, "event_id": "evt-0004"})
+    return r
+
+
+def _ball_teleport(r: Records) -> Records:
+    x, y = r.ball[15]  # type: ignore[misc]
+    r.ball[15] = (x + 4.0, y)
+    return rebuild_frames(r)
+
+
+def _fast_shot(r: Records) -> Records:
+    passed = r.events[2]
+    r.events[2] = passed.model_copy(
+        update={"event_type": "shot", "recipient_id": None, "end_m": (105.0, 32.0), "outcome": "on_target"}
+    )
+    return r
+
+
 MUTATIONS: list[tuple[str, Callable[[Records], Records], str]] = [
+    ("pass_end_off", _pass_end_off, "pass_end_mismatch"),
+    ("off_pitch", _off_pitch, "out_of_bounds"),
+    ("skip_sequence", _skip_sequence, "sequence_gap"),
+    ("ball_teleport", _ball_teleport, "speed_exceeded"),
+    ("fast_shot", _fast_shot, "pass_ball_speed"),
     ("jump", _jump, "speed_exceeded"),
     ("accelerate", _accelerate, "accel_exceeded"),
     ("detach_ball", _detach_ball, "ball_detached"),
@@ -112,6 +147,22 @@ def test_fast_pass_is_flagged() -> None:
     report = validate_output(make_output(pass_speed_mps=30.0))
     assert codes(report) == ["pass_ball_speed"]
     assert report.issues[0].record_id == "evt-0003"
+
+
+def test_ball_off_the_passer_is_a_pass_start_mismatch() -> None:
+    r = make_output()
+    x, y = r.ball[12]  # type: ignore[misc]
+    r.ball[12] = (x, y + 0.5)
+    report = validate_output(rebuild_frames(r))
+    assert ("pass_start_mismatch", "evt-0003") in [(i.code, i.record_id) for i in report.issues]
+
+
+def test_ball_and_shot_speed_issues_name_the_ball_and_the_shot() -> None:
+    teleport = validate_output(_ball_teleport(make_output())).issues
+    assert teleport[0].detail.startswith("ball ")
+    shot = validate_output(_fast_shot(make_output())).issues
+    assert shot[0].record_id == "evt-0003"
+    assert "shot" in shot[0].detail
 
 
 def test_invisible_actor_at_event_is_unchecked() -> None:

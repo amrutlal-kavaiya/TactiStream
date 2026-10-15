@@ -160,7 +160,7 @@ def script(b: SegmentBuilder) -> None:
         [
             (0, (77.0, 38.0)),
             (fp, (86.0, 33.5)),
-            (sh + BLOCK_MS, (95.0, 32.0) if blocked else (93.0, 26.0)),
+            (sh + BLOCK_MS, (97.5, 31.5) if blocked else (93.0, 26.0)),
         ],
     )
     b.keyframes(

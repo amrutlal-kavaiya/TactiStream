@@ -26,6 +26,7 @@ from tactistream.simulator.kinematics import (
     MAX_PLAYER_ACCEL_MPS2,
     MAX_PLAYER_SPEED_MPS,
     PASS_SPEED_RANGE_MPS,
+    SHOT_SPEED_MAX_MPS,
 )
 from tactistream.simulator.possession import IllegalTransition, Phase, PossessionState, transition
 
@@ -37,6 +38,7 @@ DISTANCE_TOLERANCE_M = 0.02
 EVENT_COORD_MAX_M = 1.0
 GOAL_LINE_MAX_M = 2.0
 BOUNDS_MARGIN_M = 2.0
+BALL_FRAME_SPEED_MAX_MPS = SHOT_SPEED_MAX_MPS + SPEED_TOLERANCE_MPS
 _UNCHECKED_COORD_EVENTS = ("out_of_play", "period_end")
 _ARRIVING = ("kickoff", "pass")
 
@@ -221,6 +223,18 @@ def _check_kinematics(out: _Collector, grid: _Grid) -> None:
                 grid.frame_id(k),
                 f"{pid} {float(accel[k - 2]):.2f} m/s² over 200 ms (max {max_accel:.2f})",
             )
+    visible = np.flatnonzero(~np.isnan(grid.ball[:, 0]))
+    adjacent = np.flatnonzero(np.diff(visible) == 1)
+    steps = grid.ball[visible[adjacent + 1]] - grid.ball[visible[adjacent]]
+    ball_speeds = np.hypot(steps[:, 0], steps[:, 1]) / dt
+    over = np.flatnonzero(ball_speeds > BALL_FRAME_SPEED_MAX_MPS)
+    if len(over):
+        m = int(over[0])
+        out.add(
+            "speed_exceeded",
+            grid.frame_id(int(visible[adjacent[m] + 1])),
+            f"ball {float(ball_speeds[m]):.2f} m/s over one frame (max {BALL_FRAME_SPEED_MAX_MPS:.2f})",
+        )
     entities = [*grid.players.items(), ("ball", grid.ball)]
     for name, pos in entities:
         with np.errstate(invalid="ignore"):
@@ -253,6 +267,10 @@ def _check_event(out: _Collector, grid: _Grid, metadata: MatchMetadata, event: M
         low, high = PASS_SPEED_RANGE_MPS
         if not low - 1e-6 <= speed <= high + 1e-6:
             out.add("pass_ball_speed", event.event_id, f"{speed:.2f} m/s outside {low}-{high}")
+    if event.event_type == "shot" and event.end_m is not None and event.duration_ms:
+        speed = _dist(event.start_m, event.end_m) / (event.duration_ms / 1000.0)
+        if speed > SHOT_SPEED_MAX_MPS + 1e-6:
+            out.add("pass_ball_speed", event.event_id, f"shot {speed:.2f} m/s above {SHOT_SPEED_MAX_MPS}")
     if event.event_type == "pass":
         ball = grid.ball_at(t)
         if (
