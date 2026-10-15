@@ -3,23 +3,92 @@
     "language": "en",
     "status": "reviewed"
   },
-  "title.forward_pass": {
-    "fan": "Forward pass",
-    "analyst": "Forward pass"
-  },
   "fact.forward_pass": {
     "fan": "{passer} played a forward pass to {receiver} ({progress} m forward).",
     "analyst": "{passer} played a forward pass to {receiver} ({progress} m forward). Progress along attack axis: {progress} m ({progress.event_ids})."
-  },
-  "title.pass_attempted": {
-    "fan": "Pass attempted",
-    "analyst": "Pass attempted"
   },
   "fact.pass_attempted": {
     "fan": "{passer} attempted a forward pass.",
     "analyst": "{passer} attempted a forward pass. The outcome is not recorded in the feed."
   },
-  "status.insufficient_tracking": "Insufficient tracking for this explanation",
-  "label.synthetic": "Synthetic",
-  "label.interpretation": "Interpretation"
+  "fact.shot": {
+    "fan": "{shooter} took a shot: {outcome}.",
+    "analyst": "{shooter} took a shot: {outcome} ({shot})."
+  },
+  "fact.turnover": {
+    "fan": "{winner} won the ball from {loser_team}.",
+    "analyst": "{winner} won possession from {loser_team} ({event})."
+  },
+  "fact.switch": {
+    "fan": "{passer} switched play to {receiver}.",
+    "analyst": "{passer} switched play to {receiver} ({event})."
+  },
+  "interp.space_opened_by_run": {
+    "fan": "{runner}'s run helped create room for the pass.",
+    "analyst": "{defender} shifted toward {runner} while the passing channel widened by {channel_gain} m. The next forward pass used that space."
+  },
+  "interp.defender_followed_runner": {
+    "fan": "{defender} moved with {runner}'s run.",
+    "analyst": "{defender}'s movement matched {runner}'s run (direction similarity {follow})."
+  },
+  "interp.pressure_preceded_turnover": {
+    "fan": "Pressure on {carrier} preceded the turnover.",
+    "analyst": "Pressure on {carrier} reached a proxy score of {pressure} just before {winner} won the ball."
+  },
+  "interp.switch_escaped_pressure": {
+    "fan": "{passer}'s switch coincided with play moving away from pressure.",
+    "analyst": "Pressure proxy fell from {pressure_before} on {passer} to {pressure_after} on {receiver} after the switch."
+  },
+  "status.insufficient_tracking": {
+    "fan": "Insufficient tracking for this explanation.",
+    "analyst": "Insufficient tracking for this explanation."
+  },
+  "title.forward_pass": {
+    "text": "Forward pass"
+  },
+  "title.pass_attempted": {
+    "text": "Pass attempted"
+  },
+  "title.shot": {
+    "text": "Shot"
+  },
+  "title.turnover": {
+    "text": "Ball won"
+  },
+  "title.switch": {
+    "text": "Switch of play"
+  },
+  "title.space_opened_before_shot": {
+    "text": "Space opened before the shot"
+  },
+  "title.space_opened_before_pass": {
+    "text": "Space opened before the pass"
+  },
+  "title.runner_tracked": {
+    "text": "Defender went with the run"
+  },
+  "title.pressure_before_turnover": {
+    "text": "Pressure before the turnover"
+  },
+  "title.switch_escape": {
+    "text": "Switch away from pressure"
+  },
+  "outcome.on_target": {
+    "text": "on target"
+  },
+  "outcome.off_target": {
+    "text": "off target"
+  },
+  "outcome.blocked": {
+    "text": "blocked"
+  },
+  "outcome.goal": {
+    "text": "goal"
+  },
+  "label.synthetic": {
+    "text": "Synthetic"
+  },
+  "label.interpretation": {
+    "text": "Interpretation"
+  }
 }

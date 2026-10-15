@@ -42,7 +42,13 @@ NarrativeStage = Literal[
     "analysing", "verifying", "producing", "checking", "released", "fallback", "abstained"
 ]
 FallbackReason = Literal[
-    "timeout", "verifier_rejected", "output_check_failed", "model_error", "expired", "insufficient_tracking"
+    "timeout",
+    "verifier_rejected",
+    "output_check_failed",
+    "model_error",
+    "expired",
+    "insufficient_tracking",
+    "no_supported_claim",
 ]
 PlaybackStateName = Literal["playing", "paused", "ended"]
 

@@ -11,16 +11,18 @@ from tactistream.contracts.event import MatchEvent
 from tactistream.contracts.insight import InsightPacket
 from tactistream.contracts.match import MatchMetadata
 from tactistream.contracts.payload import parse_payload
+from tactistream.contracts.trace import AgentTrace
 from tactistream.contracts.tracking import TrackingFrame
 
 EnvelopeKind = Literal["metadata", "event", "frame", "insight", "agent_trace", "latency"]
-EnvelopePayload = MatchMetadata | MatchEvent | TrackingFrame | InsightPacket | dict[str, Any]
+EnvelopePayload = MatchMetadata | MatchEvent | TrackingFrame | InsightPacket | AgentTrace | dict[str, Any]
 
 _PAYLOAD_MODELS: dict[str, type[BaseModel]] = {
     "metadata": MatchMetadata,
     "event": MatchEvent,
     "frame": TrackingFrame,
     "insight": InsightPacket,
+    "agent_trace": AgentTrace,
 }
 
 

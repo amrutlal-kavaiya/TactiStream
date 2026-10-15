@@ -47,6 +47,10 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tactistream"]
+artifacts = [
+    "src/tactistream/agents/prompts/*.md",
+    "src/tactistream/narrative/catalog/*.json",
+]
 
 [tool.ruff]
 line-length = 110

@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://tactistream.dev/contracts/ws_message.schema.json",
   "title": "WebSocket messages on /ws/matches/{match_id}",
+  "$comment": "schema_version 1.1: NarrativeStatus.fallback_reason no_supported_claim (004 C4).",
   "$defs": {
     "ServerMessage": {
       "type": "object",
@@ -52,7 +53,7 @@
       "properties": {
         "moment_id": { "$ref": "common.schema.json#/$defs/MomentId" },
         "stage": { "enum": ["analysing", "verifying", "producing", "checking", "released", "fallback", "abstained"] },
-        "fallback_reason": { "enum": ["timeout", "verifier_rejected", "output_check_failed", "model_error", "expired", "insufficient_tracking"] },
+        "fallback_reason": { "enum": ["timeout", "verifier_rejected", "output_check_failed", "model_error", "expired", "insufficient_tracking", "no_supported_claim"] },
         "trace_id": { "$ref": "common.schema.json#/$defs/TraceId" }
       }
     },

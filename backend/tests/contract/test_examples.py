@@ -19,6 +19,7 @@ from tactistream.contracts import (
     TrackingFrame,
 )
 from tactistream.contracts.schema_registry import ContractError, validate
+from tactistream.contracts.trace import AgentTrace
 
 EXAMPLES = Path(__file__).parents[3] / "contracts" / "examples"
 
@@ -33,6 +34,7 @@ CASES: list[tuple[str, str, type[BaseModel]]] = [
     ("recap.json", "recap.schema.json", Recap),
     ("feed_envelope_event.json", "feed_envelope.schema.json", FeedEnvelope),
     ("latency_sample.json", "latency_sample.schema.json", LatencySample),
+    ("agent_trace.json", "agent_trace.schema.json", AgentTrace),
 ]
 
 

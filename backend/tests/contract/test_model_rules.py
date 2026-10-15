@@ -251,9 +251,9 @@ def test_envelope_rejects_payload_not_matching_kind() -> None:
 def test_envelope_untyped_kinds_keep_dict_payload() -> None:
     obj = {
         "schema_version": "1.0",
-        "kind": "agent_trace",
+        "kind": "latency",
         "match_id": "demo-blue-amber-001",
-        "record_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+        "record_id": "lat-narrative-ins-0045:1-viewer",
         "published_ms": 1,
         "payload": {"anything": [1, 2]},
     }

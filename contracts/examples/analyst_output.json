@@ -9,7 +9,7 @@
       "slots": {
         "passer": { "kind": "player", "player_id": "blue-08" },
         "receiver": { "kind": "player", "player_id": "blue-11" },
-        "progress": { "kind": "metric", "metric_id": "metric-forward_progress-0042" }
+        "progress": { "kind": "metric", "metric_id": "metric-forward_progress-0042", "value": 13.1, "unit": "m" }
       },
       "evidence_ids": ["evt-0042", "metric-forward_progress-0042"],
       "uncertainty": "low"
@@ -21,7 +21,7 @@
       "slots": {
         "runner": { "kind": "player", "player_id": "blue-09" },
         "defender": { "kind": "player", "player_id": "amber-04" },
-        "channel_gain": { "kind": "metric", "metric_id": "metric-channel-0042" }
+        "channel_gain": { "kind": "metric", "metric_id": "metric-channel-0042", "value": 3.4, "unit": "m" }
       },
       "evidence_ids": ["metric-off_ball_run-0042", "metric-defender_follow-0042", "metric-channel-0042", "evt-0042"],
       "uncertainty": "medium",
