@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tactistream.dev/contracts/claim.schema.json",
+  "title": "Claim ledger types (Analyst output, Verifier verdicts, Producer selection)",
+  "$defs": {
+    "SlotValue": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["player", "team", "metric", "event_time"] },
+        "player_id": { "$ref": "common.schema.json#/$defs/PlayerId" },
+        "team_id": { "$ref": "common.schema.json#/$defs/TeamId" },
+        "metric_id": { "$ref": "common.schema.json#/$defs/MetricId" },
+        "event_id": { "$ref": "common.schema.json#/$defs/EventId" }
+      }
+    },
+    "Claim": {
+      "type": "object",
+      "required": ["claim_id", "kind", "template_id", "slots", "evidence_ids", "uncertainty"],
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": { "$ref": "common.schema.json#/$defs/ClaimId" },
+        "kind": { "enum": ["fact", "interpretation"] },
+        "template_id": {
+          "description": "Key in the narrative catalog, e.g. fact.forward_pass, interp.space_opened_by_run.",
+          "type": "string",
+          "pattern": "^(fact|interp)\\.[a-z_]+$"
+        },
+        "slots": { "type": "object", "additionalProperties": { "$ref": "#/$defs/SlotValue" } },
+        "evidence_ids": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/EvidenceId" } },
+        "uncertainty": { "enum": ["low", "medium", "high"] },
+        "requested_annotations": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/AnnotationId" } },
+        "rationale": { "type": "string", "maxLength": 280, "description": "Short public decision note; never private chain-of-thought." }
+      }
+    },
+    "AnalystOutput": {
+      "type": "object",
+      "required": ["moment_id", "claims", "abstained"],
+      "additionalProperties": false,
+      "properties": {
+        "moment_id": { "$ref": "common.schema.json#/$defs/MomentId" },
+        "claims": { "type": "array", "maxItems": 2, "items": { "$ref": "#/$defs/Claim" } },
+        "abstained": { "type": "boolean" },
+        "abstain_reason": { "enum": ["insufficient_tracking", "no_supported_interpretation", "timeout"] }
+      }
+    },
+    "Verdict": {
+      "type": "object",
+      "required": ["claim_id", "decision", "reason_codes"],
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": { "$ref": "common.schema.json#/$defs/ClaimId" },
+        "decision": { "enum": ["approve", "revise", "reject"] },
+        "reason_codes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "ok",
+              "missing_evidence_id",
+              "future_evidence",
+              "value_mismatch",
+              "unit_mismatch",
+              "unsupported_causality",
+              "counterevidence",
+              "insufficient_tracking",
+              "template_kind_mismatch"
+            ]
+          }
+        },
+        "note": { "type": "string", "maxLength": 200 }
+      }
+    },
+    "VerifierOutput": {
+      "type": "object",
+      "required": ["moment_id", "verdicts"],
+      "additionalProperties": false,
+      "properties": {
+        "moment_id": { "$ref": "common.schema.json#/$defs/MomentId" },
+        "verdicts": { "type": "array", "items": { "$ref": "#/$defs/Verdict" } }
+      }
+    },
+    "ProducerOutput": {
+      "type": "object",
+      "required": ["moment_id", "fan", "analyst"],
+      "additionalProperties": false,
+      "properties": {
+        "moment_id": { "$ref": "common.schema.json#/$defs/MomentId" },
+        "fan": { "$ref": "#/$defs/ModePlan" },
+        "analyst": { "$ref": "#/$defs/ModePlan" }
+      }
+    },
+    "ModePlan": {
+      "type": "object",
+      "required": ["title_template_id", "claim_ids", "annotations", "priority", "panel"],
+      "additionalProperties": false,
+      "properties": {
+        "title_template_id": { "type": "string", "pattern": "^title\\.[a-z_]+$" },
+        "claim_ids": { "type": "array", "minItems": 1, "maxItems": 2, "items": { "$ref": "common.schema.json#/$defs/ClaimId" } },
+        "annotations": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/AnnotationId" } },
+        "priority": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "panel": { "enum": ["lower_third", "side_panel"] }
+      }
+    }
+  }
+}

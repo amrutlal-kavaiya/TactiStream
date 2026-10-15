@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tactistream.dev/contracts/recap.schema.json",
+  "title": "Recap",
+  "description": "Ranked replay playlist + concise text + timed overlay track for a studio graphics system.",
+  "type": "object",
+  "required": ["schema_version", "recap_id", "match_id", "mode", "language", "generated_at_state_version", "items", "summary", "overlay_track"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
+    "recap_id": { "type": "string", "pattern": "^recap-[a-z0-9-]+$" },
+    "match_id": { "$ref": "common.schema.json#/$defs/MatchId" },
+    "mode": { "$ref": "common.schema.json#/$defs/ViewerMode" },
+    "language": { "$ref": "common.schema.json#/$defs/Language" },
+    "pinned_player_id": { "$ref": "common.schema.json#/$defs/PlayerId" },
+    "generated_at_state_version": { "type": "integer", "minimum": 0 },
+    "summary": { "type": "string", "maxLength": 600 },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["rank", "moment_id", "insight_id", "replay_window", "title", "evidence_ids"],
+        "additionalProperties": false,
+        "properties": {
+          "rank": { "type": "integer", "minimum": 1 },
+          "moment_id": { "$ref": "common.schema.json#/$defs/MomentId" },
+          "insight_id": { "$ref": "common.schema.json#/$defs/InsightId" },
+          "replay_window": {
+            "type": "object",
+            "required": ["start_ms", "end_ms"],
+            "properties": {
+              "start_ms": { "$ref": "common.schema.json#/$defs/Milliseconds" },
+              "end_ms": { "$ref": "common.schema.json#/$defs/Milliseconds" }
+            }
+          },
+          "title": { "type": "string", "maxLength": 80 },
+          "pinned_player_involvement": { "enum": ["direct", "off_ball", "none"] },
+          "evidence_ids": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/EvidenceId" } }
+        }
+      }
+    },
+    "overlay_track": {
+      "description": "Timed overlays on a recap-relative clock (ms from recap start).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["start_ms", "end_ms", "insight_id", "text", "annotations"],
+        "additionalProperties": false,
+        "properties": {
+          "start_ms": { "$ref": "common.schema.json#/$defs/Milliseconds" },
+          "end_ms": { "$ref": "common.schema.json#/$defs/Milliseconds" },
+          "insight_id": { "$ref": "common.schema.json#/$defs/InsightId" },
+          "text": { "type": "string", "maxLength": 200 },
+          "annotations": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/AnnotationId" } }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tactistream.dev/contracts/ws_message.schema.json",
+  "title": "WebSocket messages on /ws/matches/{match_id}",
+  "$defs": {
+    "ServerMessage": {
+      "type": "object",
+      "required": ["type", "seq", "match_id", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": ["snapshot", "event", "frame", "metric", "moment", "insight", "insight_revoked", "narrative_status", "heartbeat", "error"]
+        },
+        "seq": { "type": "integer", "minimum": 0, "description": "Monotonic per match stream; clients resume from the last seq they processed." },
+        "match_id": { "$ref": "common.schema.json#/$defs/MatchId" },
+        "server_receipt_ms": { "type": "integer", "minimum": 0 },
+        "payload": { "type": "object" }
+      },
+      "allOf": [
+        { "if": { "properties": { "type": { "const": "event" } } }, "then": { "properties": { "payload": { "$ref": "event.schema.json" } } } },
+        { "if": { "properties": { "type": { "const": "frame" } } }, "then": { "properties": { "payload": { "$ref": "tracking_frame.schema.json" } } } },
+        { "if": { "properties": { "type": { "const": "metric" } } }, "then": { "properties": { "payload": { "$ref": "metric_result.schema.json" } } } },
+        { "if": { "properties": { "type": { "const": "moment" } } }, "then": { "properties": { "payload": { "$ref": "candidate_moment.schema.json" } } } },
+        { "if": { "properties": { "type": { "const": "insight" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/InsightBundle" } } } },
+        { "if": { "properties": { "type": { "const": "insight_revoked" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/InsightRevoked" } } } },
+        { "if": { "properties": { "type": { "const": "narrative_status" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/NarrativeStatus" } } } },
+        { "if": { "properties": { "type": { "const": "snapshot" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/Snapshot" } } } }
+      ]
+    },
+    "InsightBundle": {
+      "description": "All four (mode x language) variants of one insight version so switching is instant and consistent.",
+      "type": "object",
+      "required": ["insight_id", "insight_version", "variants"],
+      "properties": {
+        "insight_id": { "$ref": "common.schema.json#/$defs/InsightId" },
+        "insight_version": { "type": "integer", "minimum": 1 },
+        "variants": { "type": "array", "minItems": 1, "maxItems": 4, "items": { "$ref": "insight_packet.schema.json" } }
+      }
+    },
+    "InsightRevoked": {
+      "type": "object",
+      "required": ["insight_id", "insight_version", "reason"],
+      "properties": {
+        "insight_id": { "$ref": "common.schema.json#/$defs/InsightId" },
+        "insight_version": { "type": "integer", "minimum": 1 },
+        "reason": { "enum": ["late_event_revision", "expired", "superseded"] }
+      }
+    },
+    "NarrativeStatus": {
+      "type": "object",
+      "required": ["moment_id", "stage"],
+      "properties": {
+        "moment_id": { "$ref": "common.schema.json#/$defs/MomentId" },
+        "stage": { "enum": ["analysing", "verifying", "producing", "checking", "released", "fallback", "abstained"] },
+        "fallback_reason": { "enum": ["timeout", "verifier_rejected", "output_check_failed", "model_error", "expired", "insufficient_tracking"] },
+        "trace_id": { "$ref": "common.schema.json#/$defs/TraceId" }
+      }
+    },
+    "Snapshot": {
+      "type": "object",
+      "required": ["metadata", "state_version", "session_clock_ms", "events", "latest_frame", "moments", "insights", "playback"],
+      "properties": {
+        "metadata": { "$ref": "match_metadata.schema.json" },
+        "state_version": { "type": "integer", "minimum": 0 },
+        "session_clock_ms": { "$ref": "common.schema.json#/$defs/Milliseconds" },
+        "events": { "type": "array", "items": { "$ref": "event.schema.json" } },
+        "latest_frame": { "anyOf": [{ "$ref": "tracking_frame.schema.json" }, { "type": "null" }] },
+        "moments": { "type": "array", "items": { "$ref": "candidate_moment.schema.json" } },
+        "insights": { "type": "array", "items": { "$ref": "#/$defs/InsightBundle" } },
+        "playback": {
+          "type": "object",
+          "required": ["state", "speed", "seed"],
+          "properties": {
+            "state": { "enum": ["playing", "paused", "ended"] },
+            "speed": { "type": "number", "exclusiveMinimum": 0, "maximum": 4 },
+            "seed": { "type": "integer" }
+          }
+        }
+      }
+    },
+    "ClientMessage": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "last_seq"],
+          "additionalProperties": false,
+          "properties": { "type": { "const": "resume" }, "last_seq": { "type": "integer", "minimum": -1 } }
+        },
+        {
+          "type": "object",
+          "required": ["type", "mode", "language"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "prefs" },
+            "mode": { "$ref": "common.schema.json#/$defs/ViewerMode" },
+            "language": { "$ref": "common.schema.json#/$defs/Language" },
+            "pinned_player_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/PlayerId" }, { "type": "null" }] }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "target_kind", "target_id", "server_seq"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "display_ack" },
+            "target_kind": { "enum": ["event", "insight"] },
+            "target_id": { "type": "string" },
+            "server_seq": { "type": "integer", "minimum": 0 }
+          }
+        }
+      ]
+    }
+  }
+}

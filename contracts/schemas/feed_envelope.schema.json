@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tactistream.dev/contracts/feed_envelope.schema.json",
+  "title": "FeedEnvelope",
+  "description": "Unit published on the FeedBus / Azure Event Hubs. Partition key = match_id. Fabric Eventstream routes by kind.",
+  "type": "object",
+  "required": ["schema_version", "kind", "match_id", "record_id", "published_ms", "payload"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
+    "kind": { "enum": ["metadata", "event", "frame", "insight", "agent_trace", "latency"] },
+    "match_id": { "$ref": "common.schema.json#/$defs/MatchId" },
+    "record_id": { "type": "string", "minLength": 1, "description": "event_id, frame_id, insight_id:version, trace_id or latency sample id; dedupe key together with kind." },
+    "published_ms": { "type": "integer", "minimum": 0, "description": "Publisher wall clock (epoch ms)." },
+    "server_receipt_ms": { "type": "integer", "minimum": 0, "description": "Set by the ingesting service on receipt (epoch ms)." },
+    "payload": { "type": "object" }
+  },
+  "allOf": [
+    { "if": { "properties": { "kind": { "const": "metadata" } } }, "then": { "properties": { "payload": { "$ref": "match_metadata.schema.json" } } } },
+    { "if": { "properties": { "kind": { "const": "event" } } }, "then": { "properties": { "payload": { "$ref": "event.schema.json" } } } },
+    { "if": { "properties": { "kind": { "const": "frame" } } }, "then": { "properties": { "payload": { "$ref": "tracking_frame.schema.json" } } } },
+    { "if": { "properties": { "kind": { "const": "insight" } } }, "then": { "properties": { "payload": { "$ref": "insight_packet.schema.json" } } } }
+  ]
+}

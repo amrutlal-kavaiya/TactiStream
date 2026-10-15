@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "match_id": "demo-blue-amber-001",
+  "frame_id": "frm-000423",
+  "frame_index": 423,
+  "period": 1,
+  "period_clock_ms": 882300,
+  "session_clock_ms": 42300,
+  "players": [
+    { "player_id": "blue-08", "visible": true, "pos_m": [58.1, 32.4] },
+    { "player_id": "blue-09", "visible": true, "pos_m": [74.6, 41.9] },
+    { "player_id": "blue-11", "visible": true, "pos_m": [69.8, 27.5] },
+    { "player_id": "amber-04", "visible": true, "pos_m": [77.0, 39.8] },
+    { "player_id": "amber-05", "visible": false }
+  ],
+  "ball": { "visible": true, "pos_m": [58.4, 32.3], "height_m": 0.1 },
+  "source": { "kind": "synthetic", "generator_version": "0.1.0", "seed": 42 }
+}

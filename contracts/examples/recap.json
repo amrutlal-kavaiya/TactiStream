@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "recap_id": "recap-demo-blue-amber-001-blue-09-fan-en",
+  "match_id": "demo-blue-amber-001",
+  "mode": "fan",
+  "language": "en",
+  "pinned_player_id": "blue-09",
+  "generated_at_state_version": 900,
+  "summary": "Blue 9 was involved in 2 key moments, including an off-ball run that helped create room for a forward pass.",
+  "items": [
+    {
+      "rank": 1,
+      "moment_id": "mom-0045",
+      "insight_id": "ins-0045",
+      "replay_window": { "start_ms": 36000, "end_ms": 46500 },
+      "title": "Space opened before the shot",
+      "pinned_player_involvement": "off_ball",
+      "evidence_ids": ["evt-0042", "metric-channel-0042"]
+    }
+  ],
+  "overlay_track": [
+    {
+      "start_ms": 1500,
+      "end_ms": 7500,
+      "insight_id": "ins-0045",
+      "text": "Blue 9's run helped create room for the pass.",
+      "annotations": ["highlight_blue_09", "show_channel_0042"]
+    }
+  ]
+}

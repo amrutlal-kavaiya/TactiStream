@@ -1,0 +1,33 @@
+.superpowers/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Node
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# Playwright / test output
+test-results/
+playwright-report/
+blob-report/
+
+# Editors / OS
+.DS_Store
+.idea/

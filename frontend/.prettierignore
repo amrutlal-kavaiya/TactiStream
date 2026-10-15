@@ -1,0 +1,5 @@
+dist
+node_modules
+src/contracts/generated.ts
+test-results
+playwright-report

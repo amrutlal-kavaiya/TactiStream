@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "match_id": "demo-blue-amber-001",
+  "pitch": { "length_m": 105, "width_m": 68, "origin": "bottom_left" },
+  "teams": [
+    {
+      "team_id": "blue",
+      "display_name": { "en": "Blue", "hi": "ब्लू" },
+      "color_hex": "#3B82F6",
+      "players": [
+        { "player_id": "blue-01", "shirt_number": 1, "role": "GK", "display_name": { "en": "Blue 1", "hi": "ब्लू 1" } },
+        { "player_id": "blue-02", "shirt_number": 2, "role": "DF", "display_name": { "en": "Blue 2", "hi": "ब्लू 2" } },
+        { "player_id": "blue-03", "shirt_number": 3, "role": "DF", "display_name": { "en": "Blue 3", "hi": "ब्लू 3" } },
+        { "player_id": "blue-04", "shirt_number": 4, "role": "DF", "display_name": { "en": "Blue 4", "hi": "ब्लू 4" } },
+        { "player_id": "blue-05", "shirt_number": 5, "role": "DF", "display_name": { "en": "Blue 5", "hi": "ब्लू 5" } },
+        { "player_id": "blue-06", "shirt_number": 6, "role": "MF", "display_name": { "en": "Blue 6", "hi": "ब्लू 6" } },
+        { "player_id": "blue-07", "shirt_number": 7, "role": "FW", "display_name": { "en": "Blue 7", "hi": "ब्लू 7" } },
+        { "player_id": "blue-08", "shirt_number": 8, "role": "MF", "display_name": { "en": "Blue 8", "hi": "ब्लू 8" } },
+        { "player_id": "blue-09", "shirt_number": 9, "role": "FW", "display_name": { "en": "Blue 9", "hi": "ब्लू 9" } },
+        { "player_id": "blue-10", "shirt_number": 10, "role": "MF", "display_name": { "en": "Blue 10", "hi": "ब्लू 10" } },
+        { "player_id": "blue-11", "shirt_number": 11, "role": "FW", "display_name": { "en": "Blue 11", "hi": "ब्लू 11" } }
+      ]
+    },
+    {
+      "team_id": "amber",
+      "display_name": { "en": "Amber", "hi": "एम्बर" },
+      "color_hex": "#F59E0B",
+      "players": [
+        { "player_id": "amber-01", "shirt_number": 1, "role": "GK", "display_name": { "en": "Amber 1", "hi": "एम्बर 1" } },
+        { "player_id": "amber-02", "shirt_number": 2, "role": "DF", "display_name": { "en": "Amber 2", "hi": "एम्बर 2" } },
+        { "player_id": "amber-03", "shirt_number": 3, "role": "DF", "display_name": { "en": "Amber 3", "hi": "एम्बर 3" } },
+        { "player_id": "amber-04", "shirt_number": 4, "role": "DF", "display_name": { "en": "Amber 4", "hi": "एम्बर 4" } },
+        { "player_id": "amber-05", "shirt_number": 5, "role": "DF", "display_name": { "en": "Amber 5", "hi": "एम्बर 5" } },
+        { "player_id": "amber-06", "shirt_number": 6, "role": "MF", "display_name": { "en": "Amber 6", "hi": "एम्बर 6" } },
+        { "player_id": "amber-07", "shirt_number": 7, "role": "FW", "display_name": { "en": "Amber 7", "hi": "एम्बर 7" } },
+        { "player_id": "amber-08", "shirt_number": 8, "role": "MF", "display_name": { "en": "Amber 8", "hi": "एम्बर 8" } },
+        { "player_id": "amber-09", "shirt_number": 9, "role": "FW", "display_name": { "en": "Amber 9", "hi": "एम्बर 9" } },
+        { "player_id": "amber-10", "shirt_number": 10, "role": "MF", "display_name": { "en": "Amber 10", "hi": "एम्बर 10" } },
+        { "player_id": "amber-11", "shirt_number": 11, "role": "FW", "display_name": { "en": "Amber 11", "hi": "एम्बर 11" } }
+      ]
+    }
+  ],
+  "periods": [{ "period": 1, "attack_direction": { "blue": 1, "amber": -1 } }],
+  "frame_interval_ms": 100,
+  "source": { "kind": "synthetic", "generator_version": "0.1.0", "seed": 42 }
+}

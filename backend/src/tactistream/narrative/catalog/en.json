@@ -1,0 +1,25 @@
+{
+  "_meta": {
+    "language": "en",
+    "status": "reviewed"
+  },
+  "title.forward_pass": {
+    "fan": "Forward pass",
+    "analyst": "Forward pass"
+  },
+  "fact.forward_pass": {
+    "fan": "{passer} played a forward pass to {receiver} ({progress} m forward).",
+    "analyst": "{passer} played a forward pass to {receiver} ({progress} m forward). Progress along attack axis: {progress} m ({progress.event_ids})."
+  },
+  "title.pass_attempted": {
+    "fan": "Pass attempted",
+    "analyst": "Pass attempted"
+  },
+  "fact.pass_attempted": {
+    "fan": "{passer} attempted a forward pass.",
+    "analyst": "{passer} attempted a forward pass. The outcome is not recorded in the feed."
+  },
+  "status.insufficient_tracking": "Insufficient tracking for this explanation",
+  "label.synthetic": "Synthetic",
+  "label.interpretation": "Interpretation"
+}

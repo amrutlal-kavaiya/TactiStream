@@ -1,0 +1,75 @@
+[project]
+name = "tactistream"
+version = "0.1.0"
+description = "Synthetic football feed to evidence-backed tactical stories"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic>=2.9",
+    "pydantic-settings",
+    "jsonschema",
+    "referencing",
+    "numpy",
+    "azure-identity",
+    "azure-eventhub",
+    "azure-monitor-opentelemetry",
+    "opentelemetry-sdk",
+    "typer",
+    "agent-framework-core==1.21.0",
+    "agent-framework-foundry==1.14.1",
+]
+
+[project.scripts]
+tactistream-api = "tactistream.api.app:main"
+tactistream-smoke = "tactistream.smoke.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+    "ruff",
+    "mypy",
+    "httpx-ws>=0.9.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tactistream"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "SIM", "RUF"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+mypy_path = "src"
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["jsonschema.*", "referencing.*", "azure.*"]
+ignore_missing_imports = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+pythonpath = ["tests"]
+addopts = "-m 'not live' --import-mode=importlib"
+markers = [
+    "live: tests that call real Azure services (excluded by default; run with -m live)",
+]

@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "match_id": "demo-blue-amber-001",
+  "moment_id": "mom-0045",
+  "pattern": "space_creation",
+  "trigger_event_id": "evt-0045",
+  "window": { "start_ms": 36000, "end_ms": 46500 },
+  "involved_player_ids": ["blue-09", "blue-08", "blue-11", "amber-04"],
+  "metric_ids": ["metric-off_ball_run-0042", "metric-defender_follow-0042", "metric-channel-0042"],
+  "tracking_coverage": 1.0,
+  "rank_score": 0.82,
+  "state_version": 512
+}

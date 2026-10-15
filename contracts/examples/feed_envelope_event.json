@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "kind": "event",
+  "match_id": "demo-blue-amber-001",
+  "record_id": "evt-0042",
+  "published_ms": 1792000000000,
+  "server_receipt_ms": 1792000000012,
+  "payload": {
+    "schema_version": "1.0",
+    "match_id": "demo-blue-amber-001",
+    "event_id": "evt-0042",
+    "sequence": 42,
+    "period": 1,
+    "period_clock_ms": 882300,
+    "session_clock_ms": 42300,
+    "event_type": "pass",
+    "team_id": "blue",
+    "player_id": "blue-08",
+    "recipient_id": "blue-11",
+    "start_m": [58.1, 32.4],
+    "end_m": [71.2, 28.0],
+    "duration_ms": 900,
+    "outcome": "complete",
+    "source": { "kind": "synthetic", "generator_version": "0.1.0", "seed": 42 }
+  }
+}

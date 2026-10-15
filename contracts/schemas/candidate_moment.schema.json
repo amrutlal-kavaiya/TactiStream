@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tactistream.dev/contracts/candidate_moment.schema.json",
+  "title": "CandidateMoment",
+  "description": "A deterministic, ranked window worth explaining. Never contains scenario labels or future outcomes beyond the trigger.",
+  "type": "object",
+  "required": ["schema_version", "match_id", "moment_id", "pattern", "trigger_event_id", "window", "involved_player_ids", "metric_ids", "rank_score", "state_version"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
+    "match_id": { "$ref": "common.schema.json#/$defs/MatchId" },
+    "moment_id": { "$ref": "common.schema.json#/$defs/MomentId" },
+    "pattern": { "$ref": "common.schema.json#/$defs/MomentPattern" },
+    "trigger_event_id": { "$ref": "common.schema.json#/$defs/EventId" },
+    "window": {
+      "type": "object",
+      "required": ["start_ms", "end_ms"],
+      "additionalProperties": false,
+      "properties": {
+        "start_ms": { "$ref": "common.schema.json#/$defs/Milliseconds" },
+        "end_ms": { "$ref": "common.schema.json#/$defs/Milliseconds" }
+      }
+    },
+    "involved_player_ids": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/PlayerId" } },
+    "metric_ids": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/MetricId" } },
+    "tracking_coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+    "rank_score": { "type": "number" },
+    "state_version": { "type": "integer", "minimum": 0 }
+  }
+}

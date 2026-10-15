@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tactistream.dev/contracts/match_metadata.schema.json",
+  "title": "MatchMetadata",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "match_id",
+    "pitch",
+    "teams",
+    "periods",
+    "frame_interval_ms",
+    "source"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
+    "match_id": { "$ref": "common.schema.json#/$defs/MatchId" },
+    "pitch": {
+      "type": "object",
+      "required": ["length_m", "width_m", "origin"],
+      "additionalProperties": false,
+      "properties": {
+        "length_m": { "const": 105 },
+        "width_m": { "const": 68 },
+        "origin": { "const": "bottom_left" }
+      }
+    },
+    "teams": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["team_id", "display_name", "color_hex", "players"],
+        "additionalProperties": false,
+        "properties": {
+          "team_id": { "$ref": "common.schema.json#/$defs/TeamId" },
+          "display_name": { "type": "object", "required": ["en", "hi"], "properties": { "en": { "type": "string" }, "hi": { "type": "string" } } },
+          "color_hex": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+          "players": {
+            "type": "array",
+            "minItems": 11,
+            "items": {
+              "type": "object",
+              "required": ["player_id", "shirt_number", "role", "display_name"],
+              "additionalProperties": false,
+              "properties": {
+                "player_id": { "$ref": "common.schema.json#/$defs/PlayerId" },
+                "shirt_number": { "type": "integer", "minimum": 1, "maximum": 99 },
+                "role": { "enum": ["GK", "DF", "MF", "FW"] },
+                "display_name": { "type": "object", "required": ["en", "hi"], "properties": { "en": { "type": "string" }, "hi": { "type": "string" } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "periods": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["period", "attack_direction"],
+        "additionalProperties": false,
+        "properties": {
+          "period": { "type": "integer", "minimum": 1, "maximum": 2 },
+          "attack_direction": {
+            "description": "Direction along x in which each team attacks this period: +1 or -1.",
+            "type": "object",
+            "required": ["blue", "amber"],
+            "properties": { "blue": { "enum": [1, -1] }, "amber": { "enum": [1, -1] } }
+          }
+        }
+      }
+    },
+    "frame_interval_ms": { "const": 100 },
+    "source": { "$ref": "common.schema.json#/$defs/Provenance" }
+  }
+}

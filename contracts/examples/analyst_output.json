@@ -1,0 +1,32 @@
+{
+  "moment_id": "mom-0045",
+  "abstained": false,
+  "claims": [
+    {
+      "claim_id": "clm-0045-1",
+      "kind": "fact",
+      "template_id": "fact.forward_pass",
+      "slots": {
+        "passer": { "kind": "player", "player_id": "blue-08" },
+        "receiver": { "kind": "player", "player_id": "blue-11" },
+        "progress": { "kind": "metric", "metric_id": "metric-forward_progress-0042" }
+      },
+      "evidence_ids": ["evt-0042", "metric-forward_progress-0042"],
+      "uncertainty": "low"
+    },
+    {
+      "claim_id": "clm-0045-2",
+      "kind": "interpretation",
+      "template_id": "interp.space_opened_by_run",
+      "slots": {
+        "runner": { "kind": "player", "player_id": "blue-09" },
+        "defender": { "kind": "player", "player_id": "amber-04" },
+        "channel_gain": { "kind": "metric", "metric_id": "metric-channel-0042" }
+      },
+      "evidence_ids": ["metric-off_ball_run-0042", "metric-defender_follow-0042", "metric-channel-0042", "evt-0042"],
+      "uncertainty": "medium",
+      "requested_annotations": ["highlight_blue_09", "path_amber_04", "show_channel_0042"],
+      "rationale": "Defender displacement aligns with the run while the passer-receiver lane clearance grows before the pass."
+    }
+  ]
+}
