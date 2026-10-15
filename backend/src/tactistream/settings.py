@@ -39,6 +39,7 @@ class Settings(BaseSettings):
 
     foundry_project_endpoint: str | None = None
     foundry_model_deployment: str | None = None
+    azure_location: str | None = None
 
     applicationinsights_connection_string: str | None = None
     azure_client_id: str | None = None

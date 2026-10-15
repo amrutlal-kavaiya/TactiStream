@@ -79,13 +79,13 @@ description: "Task list for 001 walking skeleton"
 
 ### Frontend
 
-- [ ] T039 [P] [US1] Write failing `frontend/tests/unit/matchStore.test.ts`: `applySnapshot` replaces state; `applyMessage(event)` ignores already-known `event_id`; `applyMessage(insight)` sets `activeInsight` only if priority ≥ current or current expired; `variantFor(prefs)` returns matching mode/language packet
-- [ ] T040 [P] [US1] Implement `frontend/src/store/matchStore.ts` (Zustand: metadata, events, latestFrame, insights by id, activeInsightId, playback, lastSeq, prefs {mode:"fan", language:"en"})
-- [ ] T041 [P] [US1] Write failing `frontend/tests/unit/socket.test.ts` with a mock WebSocket: sends `resume` with `lastSeq` on reconnect; backoff 500 → 1000 → 2000 ms capped at 8000; reconnects after 25 s without messages; sends `display_ack` once per target
-- [ ] T042 [P] [US1] Implement `frontend/src/api/socket.ts` (`MatchSocket`) and `frontend/src/api/client.ts` (`createSession`, `control`, `getEvidence`)
-- [ ] T043 [US1] Write failing `frontend/tests/unit/InsightCard.test.tsx` and `EvidenceDrawer.test.tsx`: card renders title/body, Synthetic label, evidence chips as buttons; activating chip (click or Enter) calls `onOpenEvidence(id)`; drawer shows loading, then key fields (type, player, start/end, clocks, source kind), and "Evidence unavailable" on 404; drawer is a labelled dialog that returns focus on close
-- [ ] T044 [US1] Implement `frontend/src/components/{TopBar,SourceBadge,PlaybackControls,EventList,InsightCard,EvidenceDrawer}.tsx`, `src/App.tsx` (Start demo match → createSession → connect socket), `src/styles/tokens.css` (dark slate surface, Blue `#3B82F6`, Amber `#F59E0B`, text contrast ≥ 4.5:1), `src/i18n/{en,hi,useT}.ts` for chrome strings; InsightCard calls `display_ack` after first paint (`requestAnimationFrame`)
-- [ ] T045 [US1] Write `frontend/tests/e2e/skeleton.spec.ts` + `playwright.config.ts` (webServer: build frontend, run `uv run tactistream-api` serving dist on :8000): click Start → expect Synthetic badge → expect card text "Blue 8 played a forward pass to Blue 11 (13.1 m forward)." within 6 s → click `evt-0042` → drawer contains "pass" and "blue-08"; then Pause and Reset → card hidden. Run 5× (`--repeat-each=5`) for SC-001
+- [x] T039 [P] [US1] Write failing `frontend/tests/unit/matchStore.test.ts`: `applySnapshot` replaces state; `applyMessage(event)` ignores already-known `event_id`; `applyMessage(insight)` sets `activeInsight` only if priority ≥ current or current expired; `variantFor(prefs)` returns matching mode/language packet
+- [x] T040 [P] [US1] Implement `frontend/src/store/matchStore.ts` (Zustand: metadata, events, latestFrame, insights by id, activeInsightId, playback, lastSeq, prefs {mode:"fan", language:"en"})
+- [x] T041 [P] [US1] Write failing `frontend/tests/unit/socket.test.ts` with a mock WebSocket: sends `resume` with `lastSeq` on reconnect; backoff 500 → 1000 → 2000 ms capped at 8000; reconnects after 25 s without messages; sends `display_ack` once per target
+- [x] T042 [P] [US1] Implement `frontend/src/api/socket.ts` (`MatchSocket`) and `frontend/src/api/client.ts` (`createSession`, `control`, `getEvidence`)
+- [x] T043 [US1] Write failing `frontend/tests/unit/InsightCard.test.tsx` and `EvidenceDrawer.test.tsx`: card renders title/body, Synthetic label, evidence chips as buttons; activating chip (click or Enter) calls `onOpenEvidence(id)`; drawer shows loading, then key fields (type, player, start/end, clocks, source kind), and "Evidence unavailable" on 404; drawer is a labelled dialog that returns focus on close
+- [x] T044 [US1] Implement `frontend/src/components/{TopBar,SourceBadge,PlaybackControls,EventList,InsightCard,EvidenceDrawer}.tsx`, `src/App.tsx` (Start demo match → createSession → connect socket), `src/styles/tokens.css` (dark slate surface, Blue `#3B82F6`, Amber `#F59E0B`, text contrast ≥ 4.5:1), `src/i18n/{en,hi,useT}.ts` for chrome strings; InsightCard calls `display_ack` after first paint (`requestAnimationFrame`)
+- [x] T045 [US1] Write `frontend/tests/e2e/skeleton.spec.ts` + `playwright.config.ts` (webServer: build frontend, run `uv run tactistream-api` serving dist on :8000): click Start → expect Synthetic badge → expect card text "Blue 8 played a forward pass to Blue 11 (13.1 m forward)." within 6 s → click `evt-0042` → drawer contains "pass" and "blue-08"; then Pause and Reset → card hidden. Run 5× (`--repeat-each=5`) for SC-001
 
 **Checkpoint**: US1 independently demonstrable locally.
 
@@ -95,12 +95,12 @@ description: "Task list for 001 walking skeleton"
 
 **Independent Test**: both smoke commands exit 0 against real Azure; values recorded.
 
-- [ ] T046 [P] [US2] Write failing `backend/tests/unit/test_smoke_cli.py`: with required env vars unset, `tactistream-smoke foundry` exits 2 and prints "Missing FOUNDRY_PROJECT_ENDPOINT"; same for `eventhubs` and `EVENTHUBS_FULLY_QUALIFIED_NAMESPACE`; no traceback in output
-- [ ] T047 [US2] Add `agent-framework` (and its Azure/Foundry chat client extra as documented by the package) to `backend/pyproject.toml`, pin the resolved exact version; implement `backend/src/tactistream/smoke/foundry.py`: create the Foundry-backed chat client with `DefaultAzureCredential`, ask for `{"ok": true, "echo": "<random token>"}` as JSON, validate shape and echo, print deployment, region (from endpoint/config), latency ms, tokens; implement `smoke/cli.py` (typer app with `foundry`, `eventhubs` commands). If Agent Framework blocks > 2 h, apply research R5 fallback
-- [ ] T048 [US2] Write failing `backend/tests/unit/test_eventhubs_bus.py` using a fake producer/consumer client object injected into `EventHubsBus`: `publish` sends JSON body with `partition_key=match_id`; `subscribe("live-state")` yields parsed `FeedEnvelope`s and stamps nothing (stamping is ingest's job)
-- [ ] T049 [US2] Implement `backend/src/tactistream/transport/eventhubs_bus.py` (`EventHubsBus(namespace, hub, credential, client_factory=None)`; async producer with `partition_key`; async consumer per consumer group starting at `"@latest"`, pushing into an asyncio queue) and `smoke/eventhubs.py` (publish one envelope with random `record_id`, read it back via `live-state` within 30 s, print round-trip ms)
-- [ ] T050 [US2] Add `backend/tests/live/test_foundry_smoke.py` and `test_eventhubs_smoke.py` (`@pytest.mark.live`) invoking the smoke functions; run them once with real credentials (`uv run pytest -m live`)
-- [ ] T051 [US2] Record observed values in `specs/001-walking-skeleton/research.md` R5/R7 blanks (version, client class, deployment, model, region, latency, tokens, namespace, SKU, round-trip) and wire `Settings.bus == "eventhubs"` to construct `EventHubsBus` in `create_app`; verify `TACTISTREAM_BUS=eventhubs make dev` shows the card
+- [x] T046 [P] [US2] Write failing `backend/tests/unit/test_smoke_cli.py`: with required env vars unset, `tactistream-smoke foundry` exits 2 and prints "Missing FOUNDRY_PROJECT_ENDPOINT"; same for `eventhubs` and `EVENTHUBS_FULLY_QUALIFIED_NAMESPACE`; no traceback in output
+- [x] T047 [US2] Add `agent-framework` (and its Azure/Foundry chat client extra as documented by the package) to `backend/pyproject.toml`, pin the resolved exact version; implement `backend/src/tactistream/smoke/foundry.py`: create the Foundry-backed chat client with `DefaultAzureCredential`, ask for `{"ok": true, "echo": "<random token>"}` as JSON, validate shape and echo, print deployment, region (from endpoint/config), latency ms, tokens; implement `smoke/cli.py` (typer app with `foundry`, `eventhubs` commands). If Agent Framework blocks > 2 h, apply research R5 fallback
+- [x] T048 [US2] Write failing `backend/tests/unit/test_eventhubs_bus.py` using a fake producer/consumer client object injected into `EventHubsBus`: `publish` sends JSON body with `partition_key=match_id`; `subscribe("live-state")` yields parsed `FeedEnvelope`s and stamps nothing (stamping is ingest's job)
+- [x] T049 [US2] Implement `backend/src/tactistream/transport/eventhubs_bus.py` (`EventHubsBus(namespace, hub, credential, client_factory=None)`; async producer with `partition_key`; async consumer per consumer group starting at `"@latest"`, pushing into an asyncio queue) and `smoke/eventhubs.py` (publish one envelope with random `record_id`, read it back via `live-state` within 30 s, print round-trip ms)
+- [ ] T050 [US2] Add `backend/tests/live/test_foundry_smoke.py` and `test_eventhubs_smoke.py` (`@pytest.mark.live`) invoking the smoke functions; run them once with real credentials (`uv run pytest -m live`) (DEFERRED-LIVE: written and skip cleanly without env; not yet run against Azure)
+- [ ] T051 [US2] Record observed values in `specs/001-walking-skeleton/research.md` R5/R7 blanks (version, client class, deployment, model, region, latency, tokens, namespace, SKU, round-trip) and wire `Settings.bus == "eventhubs"` to construct `EventHubsBus` in `create_app`; verify `TACTISTREAM_BUS=eventhubs make dev` shows the card (DEFERRED-LIVE: observed values and `make dev` check; wiring done and tested in `test_eventhubs_app.py`)
 
 **Checkpoint**: Day-one exit condition met (event reaches browser + real Foundry call).
 
@@ -108,16 +108,16 @@ description: "Task list for 001 walking skeleton"
 
 ## Phase 5: User Story 3 — Contract-first CI (P2)
 
-- [ ] T052 [US3] Extend `.github/workflows/ci.yml`: job `contracts` (backend contract tests + `npm run contracts:gen` + `git diff --exit-code`), job `e2e` (install Playwright chromium, build frontend, run `npm run e2e`), cache uv and npm; all jobs on push and PR to `main`
-- [ ] T053 [US3] On a throwaway branch rename `MatchEvent.player_id` → `actor_id`; confirm CI fails in `contracts`; delete branch; note the run URL in the PR description (SC-005)
+- [x] T052 [US3] Extend `.github/workflows/ci.yml`: job `contracts` (backend contract tests + `npm run contracts:gen` + `git diff --exit-code`), job `e2e` (install Playwright chromium, build frontend, run `npm run e2e`), cache uv and npm; all jobs on push and PR to `main` (push widened to every branch; `contracts` runs `make contracts`)
+- [ ] T053 [US3] On a throwaway branch rename `MatchEvent.player_id` → `actor_id`; confirm CI fails in `contracts`; delete branch; note the run URL in the PR description (SC-005) — (local proof done; GitHub run URL pending first push)
 
 ---
 
 ## Phase 6: Polish
 
-- [ ] T054 [P] Update `README.md`: one-paragraph pitch, Synthetic-data disclaimer, quickstart (`make install && make dev`), test commands, link to `specs/README.md` and constitution
-- [ ] T055 [P] Run quickstart.md on a fresh clone (new codespace or `git clone` to /tmp) and fix any gaps
-- [ ] T056 Update `specs/README.md` feature table: mark 001 exit condition met with date
+- [x] T054 [P] Update `README.md`: one-paragraph pitch, Synthetic-data disclaimer, quickstart (`make install && make dev`), test commands, link to `specs/README.md` and constitution
+- [x] T055 [P] Run quickstart.md on a fresh clone (new codespace or `git clone` to /tmp) and fix any gaps (local `git clone` to /tmp, 2026-10-14)
+- [ ] T056 Update `specs/README.md` feature table: mark 001 exit condition met with date — (partial status recorded 14 Oct; tick when T050, T051 and the first GitHub CI run are green)
 
 ---
 

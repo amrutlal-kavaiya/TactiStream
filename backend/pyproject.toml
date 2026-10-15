@@ -21,6 +21,8 @@ dependencies = [
     "azure-kusto-data[aio]>=6.0.4",
     "httpx>=0.28.1",
     "websockets>=17.2",
+    "agent-framework-core==1.21.0",
+    "agent-framework-foundry==1.14.1",
 ]
 
 [project.scripts]
