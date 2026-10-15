@@ -17,6 +17,7 @@ import { InsightCard } from './components/InsightCard'
 import { PitchPlaceholder } from './components/PitchPlaceholder'
 import { PlaybackControls } from './components/PlaybackControls'
 import { type ConnectionStatus, TopBar } from './components/TopBar'
+import { WatchDemoButton } from './components/WatchDemoButton'
 import type { InsightPacket } from './contracts/generated'
 import type { MessageKey } from './i18n/en'
 import { formatClock, useT } from './i18n/useT'
@@ -163,6 +164,7 @@ export default function App() {
           status={connectionStatus(matchId, connected, playback)}
           themeName={themeName}
           onToggleTheme={toggleTheme}
+          actions={<WatchDemoButton />}
         />
       }
       commandBar={

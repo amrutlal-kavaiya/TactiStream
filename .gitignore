@@ -3,6 +3,9 @@
 # Generated simulator output
 data/generated/
 
+# Presenter media (spec 009 FR-029)
+data/media/
+
 # Environment
 .env
 .env.*

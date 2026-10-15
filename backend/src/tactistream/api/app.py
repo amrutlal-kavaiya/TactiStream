@@ -13,9 +13,12 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from tactistream import __version__
-from tactistream.api import routes_evidence, routes_sessions, ws
+from tactistream.api import routes_evidence, routes_presenter, routes_sessions, ws
 from tactistream.api.errors import ApiError, install_error_handlers
+from tactistream.api.routes_presenter import MediaContext, MediaLimits
 from tactistream.api.session import SessionRegistry, WallClock, wall_clock_ms
+from tactistream.media import MediaStore, build_media_store
+from tactistream.media.store import ContainerFactory
 from tactistream.settings import Settings
 from tactistream.telemetry.latency import LatencyRecorder
 from tactistream.telemetry.otel import setup_telemetry
@@ -24,7 +27,7 @@ from tactistream.transport.clock import Clock, MonotonicClock
 from tactistream.transport.eventhubs_bus import EventHubsBus, EventHubsClientFactory, enqueued_since_subscribe
 from tactistream.transport.memory_bus import InMemoryBus
 
-_RESERVED_PREFIXES = frozenset({"api", "ws", "healthz"})
+_RESERVED_PREFIXES = frozenset({"api", "ws", "healthz", "media"})
 
 
 def create_app(
@@ -34,6 +37,9 @@ def create_app(
     *,
     wall_ms: WallClock = wall_clock_ms,
     eventhubs_client_factory: EventHubsClientFactory | None = None,
+    media_store: MediaStore | None = None,
+    media_limits: MediaLimits | None = None,
+    media_container_factory: ContainerFactory | None = None,
 ) -> FastAPI:
     """Build the app. Tests inject a `FakeClock` and bus; `static_dir` is mounted only if it exists."""
     settings = settings or Settings()
@@ -66,11 +72,13 @@ def create_app(
         data_dir=settings.data_dir,
         consumer_group=settings.eventhubs_consumer_group,
     )
+    media = media_store or build_media_store(settings, container_factory=media_container_factory)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
         await registry.aclose()
+        await media.aclose()
         if owned_bus is not None:
             await owned_bus.close()
         if credential is not None:
@@ -82,6 +90,8 @@ def create_app(
     app.state.registry = registry
     app.state.clock = clock
     app.state.latency = latency
+    app.state.media_store = media
+    app.state.media = MediaContext(media, media_limits or MediaLimits())
     install_error_handlers(app)
 
     @app.get("/healthz")
@@ -91,6 +101,8 @@ def create_app(
     app.include_router(routes_sessions.router)
     app.include_router(routes_evidence.router)
     app.include_router(ws.router)
+    app.include_router(routes_presenter.presenter)
+    app.include_router(routes_presenter.public)
     static_dir = settings.static_dir
     _install_frontend(app, static_dir if static_dir is not None and static_dir.is_dir() else None)
     return app

@@ -27,6 +27,7 @@ beforeEach(() => {
   routes = {
     'POST /api/sessions': json(200, session),
     [controlPath]: json(200, playback('playing')),
+    'GET /api/config': json(200, { demo_media: null }),
   }
   vi.stubGlobal('WebSocket', MockWebSocket)
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) =>
@@ -94,7 +95,10 @@ describe('App', () => {
     await waitFor(() => {
       expect(calls).toContainEqual([controlPath, { action: 'play' }])
     })
-    expect(calls[0]).toEqual(['POST /api/sessions', { scenario: 'skeleton' }])
+    expect(calls.filter(([key]) => key !== 'GET /api/config')[0]).toEqual([
+      'POST /api/sessions',
+      { scenario: 'skeleton' },
+    ])
   })
 
   it('shows the source badge, event list, session clock and card from socket messages', async () => {

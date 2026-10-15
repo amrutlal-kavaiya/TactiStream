@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from pydantic import ValidationError
+from pydantic import SecretStr, ValidationError
 
 from tactistream.settings import Settings
 
@@ -64,7 +64,10 @@ def test_every_env_example_name_is_read(monkeypatch: pytest.MonkeyPatch) -> None
     }
     for name in example_names():
         monkeypatch.setenv(name, values.get(name, f"v-{name.lower()}"))
-    dumped = {str(v) for v in Settings(_env_file=None).model_dump().values()}
+    dumped = {
+        v.get_secret_value() if isinstance(v, SecretStr) else str(v)
+        for v in Settings(_env_file=None).model_dump().values()
+    }
     for name in example_names():
         assert values.get(name, f"v-{name.lower()}") in dumped, name
 
@@ -72,9 +75,25 @@ def test_every_env_example_name_is_read(monkeypatch: pytest.MonkeyPatch) -> None
 def test_empty_values_count_as_unset(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("EVENTHUBS_FULLY_QUALIFIED_NAMESPACE", "")
     monkeypatch.setenv("EVENTHUBS_NAME", "")
+    monkeypatch.setenv("TACTISTREAM_PRESENTER_KEY", "")
     s = Settings(_env_file=None)
+    assert s.presenter_key is None
     assert s.eventhubs_fully_qualified_namespace is None
     assert s.eventhubs_name == "tactistream-feed"
+
+
+def test_presenter_key_is_stripped(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TACTISTREAM_PRESENTER_KEY", "  sixteen-chars-ok \n")
+    s = Settings(_env_file=None)
+    assert s.presenter_key is not None
+    assert s.presenter_key.get_secret_value() == "sixteen-chars-ok"
+
+
+@pytest.mark.parametrize("value", ["dev", "fifteen-chars-x", "  fifteen-chars-x  "])
+def test_short_presenter_key_rejected(monkeypatch: pytest.MonkeyPatch, value: str) -> None:
+    monkeypatch.setenv("TACTISTREAM_PRESENTER_KEY", value)
+    with pytest.raises(ValidationError, match="TACTISTREAM_PRESENTER_KEY must be at least 16 characters"):
+        Settings(_env_file=None)
 
 
 @pytest.mark.parametrize(("name", "value"), [("TACTISTREAM_BUS", "kafka"), ("TACTISTREAM_AGENTS", "gpt")])

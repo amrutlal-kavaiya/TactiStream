@@ -37,7 +37,7 @@ Studio instructions and later organizer updates override everything below. All t
 | Category | Best Multi-Agent System | — |
 | Repository URL | `https://github.com/<owner>/TactiStream` | [ ] |
 | Live app URL | `<APP_URL>/demo?seed=42` | [ ] |
-| Demo video URL | `____` | [ ] |
+| Demo video URL | `<APP_URL>/watch` (published via `/presenter`, see `docs/presenter.md`) | [ ] |
 | Backup recording URL (if a field exists or in README) | `____` | [ ] |
 | Team members (≤ 4) | `____` | — |
 | Description | draft below (final numbers from `docs/results.md`, `report_id ____`) | — |

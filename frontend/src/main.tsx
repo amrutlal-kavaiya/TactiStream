@@ -3,13 +3,13 @@ import { createRoot } from 'react-dom/client'
 
 import './styles/app.css'
 
-import App from './App.tsx'
+import { Router } from './routes/router.tsx'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Missing #root element')
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <Router />
   </StrictMode>,
 )

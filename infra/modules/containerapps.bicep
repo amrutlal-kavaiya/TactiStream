@@ -64,6 +64,16 @@ param agents string
 @description('Deployment environment label (TACTISTREAM_ENVIRONMENT).')
 param deploymentEnvironment string
 
+@secure()
+@description('Presenter key for /presenter (TACTISTREAM_PRESENTER_KEY); empty disables presenter mode.')
+param presenterKey string = ''
+
+@description('Container Apps rejects empty secret values, so the presenter secret exists only when a key is set.')
+var presenterSecrets = empty(presenterKey) ? [] : [{ name: 'presenter-key', value: presenterKey }]
+
+@description('TACTISTREAM_PRESENTER_KEY from the presenter secret; absent (presenter disabled) when no key is set.')
+var presenterEnv = empty(presenterKey) ? [] : [{ name: 'TACTISTREAM_PRESENTER_KEY', secretRef: 'presenter-key' }]
+
 resource workspace 'Microsoft.OperationalInsights/workspaces@2025-02-01' existing = {
   name: logAnalyticsWorkspaceName
 }
@@ -114,6 +124,7 @@ resource app 'Microsoft.App/containerApps@2025-01-01' = {
           name: 'appinsights-connection-string'
           value: appInsightsConnectionString
         }
+        ...presenterSecrets
       ]
     }
     template: {
@@ -143,6 +154,7 @@ resource app 'Microsoft.App/containerApps@2025-01-01' = {
             { name: 'TACTISTREAM_STATIC_DIR', value: '/app/frontend/dist' }
             { name: 'TACTISTREAM_CONTRACTS_DIR', value: '/app/contracts/schemas' }
             { name: 'TACTISTREAM_ENVIRONMENT', value: deploymentEnvironment }
+            ...presenterEnv
           ]
           probes: [
             {
