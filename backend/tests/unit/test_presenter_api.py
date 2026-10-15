@@ -285,6 +285,21 @@ async def test_media_full_and_unsatisfiable(client: httpx.AsyncClient) -> None:
     assert bad.headers["content-range"] == f"bytes */{len(VIDEO)}"
 
 
+async def test_media_head_has_get_headers_and_no_body(client: httpx.AsyncClient) -> None:
+    await upload_main(client)
+    await client.put("/api/presenter/publish", json={"published": True}, headers=AUTH)
+    get = await client.get("/media/main")
+    head = await client.head("/media/main")
+    assert head.status_code == 200
+    assert head.content == b""
+    for name in ("content-length", "content-type", "accept-ranges", "etag"):
+        assert head.headers[name] == get.headers[name]
+    ranged = await client.head("/media/main", headers={"Range": "bytes=0-9"})
+    assert ranged.status_code == 206
+    assert ranged.content == b""
+    assert ranged.headers["content-length"] == "10"
+
+
 async def test_media_hidden_until_published_except_for_presenter(client: httpx.AsyncClient) -> None:
     await upload_main(client)
     assert (await client.get("/media/main")).status_code == 404

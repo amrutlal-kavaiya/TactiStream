@@ -322,7 +322,7 @@ def parse_range(header: str | None, size: int) -> tuple[int, int] | None:
     return start, end
 
 
-@public.get("/media/{slot}")
+@public.api_route("/media/{slot}", methods=["GET", "HEAD"])
 async def get_media(slot: str, request: Request) -> Response:
     media_slot = _slot_or_404(slot)
     ctx = _media(request)
@@ -347,11 +347,14 @@ async def get_media(slot: str, request: Request) -> Response:
             headers={**headers, "Content-Range": f"bytes */{size}"},
         )
     if byte_range is None:
-        headers["Content-Length"] = str(size)
-        return StreamingResponse(ctx.store.read(media_slot), media_type=content_type, headers=headers)
-    start, end = byte_range
-    length = end - start + 1
-    headers.update({"Content-Length": str(length), "Content-Range": f"bytes {start}-{end}/{size}"})
+        status, start, length = 200, 0, size
+    else:
+        start, end = byte_range
+        status, length = 206, end - start + 1
+        headers["Content-Range"] = f"bytes {start}-{end}/{size}"
+    headers["Content-Length"] = str(length)
+    if request.method == "HEAD":
+        return Response(status_code=status, media_type=content_type, headers=headers)
     return StreamingResponse(
-        ctx.store.read(media_slot, start, length), status_code=206, media_type=content_type, headers=headers
+        ctx.store.read(media_slot, start, length), status_code=status, media_type=content_type, headers=headers
     )
