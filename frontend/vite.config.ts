@@ -8,6 +8,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': { target: backend, changeOrigin: true },
+      '/media': { target: backend, changeOrigin: true },
       '/ws': { target: backend, ws: true, changeOrigin: true },
     },
   },

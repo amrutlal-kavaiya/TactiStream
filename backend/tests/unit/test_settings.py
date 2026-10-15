@@ -73,7 +73,9 @@ def test_every_env_example_name_is_read(monkeypatch: pytest.MonkeyPatch) -> None
 def test_empty_values_count_as_unset(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("EVENTHUBS_FULLY_QUALIFIED_NAMESPACE", "")
     monkeypatch.setenv("EVENTHUBS_NAME", "")
+    monkeypatch.setenv("TACTISTREAM_PRESENTER_KEY", "")
     s = Settings(_env_file=None)
+    assert s.presenter_key is None
     assert s.eventhubs_fully_qualified_namespace is None
     assert s.eventhubs_name == "tactistream-feed"
 

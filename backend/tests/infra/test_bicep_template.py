@@ -1,5 +1,6 @@
 """Compiled-template assertions for `infra/main.bicep` (plan.md "Compiled-template tests")."""
 
+import copy
 import json
 import re
 import shutil
@@ -135,8 +136,68 @@ def last_segment(name: str) -> str:
     return match.group(1)
 
 
-def container_app() -> dict[str, Any]:
-    return one("Microsoft.App/containerApps").body
+ARM_TOKEN = re.compile(r"\s*(?:('(?:[^']|'')*')|(-?\d+(?:\.\d+)?)|([A-Za-z_]\w*)|([(),]))")
+
+
+def arm_value(value: Any, scope: dict[str, Any]) -> Any:
+    """Evaluate the few ARM functions Bicep emits for conditional arrays (spread, `cond ? [] : [...]`)."""
+    if not (isinstance(value, str) and value.startswith("[") and value.endswith("]")):
+        return value
+    text = value[1:-1]
+    tokens = [m.groups() for m in ARM_TOKEN.finditer(text)]
+    assert sum(len(m.group(0)) for m in ARM_TOKEN.finditer(text)) == len(text), text
+    position = 0
+
+    def parse() -> Any:
+        nonlocal position
+        literal, number, name, _ = tokens[position]
+        position += 1
+        if literal is not None:
+            return literal[1:-1].replace("''", "'")
+        if number is not None:
+            return float(number) if "." in number else int(number)
+        assert name is not None and tokens[position][3] == "(", text
+        position += 1
+        args: list[Any] = []
+        while tokens[position][3] != ")":
+            args.append(parse())
+            if tokens[position][3] == ",":
+                position += 1
+        position += 1
+        return call(name, args)
+
+    def call(name: str, args: list[Any]) -> Any:
+        match name:
+            case "createArray":
+                return args
+            case "createObject":
+                return dict(zip(args[::2], args[1::2], strict=True))
+            case "flatten":
+                return [item for array in args[0] for item in array]
+            case "if":
+                return args[1] if args[0] else args[2]
+            case "empty":
+                return not args[0]
+            case "parameters":
+                resolved = scope.get(args[0])
+                return f"[parameters('{args[0]}')]" if resolved is None else resolved
+            case "variables":
+                return arm_value(scope[args[0]], scope)
+        raise AssertionError(f"unsupported ARM function {name} in {text}")
+
+    return parse()
+
+
+def container_app(presenter_key: str = "") -> dict[str, Any]:
+    """The app with `secrets` and `env` evaluated for a given `presenterKey` parameter."""
+    resource = one("Microsoft.App/containerApps")
+    scope = {**resource.scope, "presenterKey": presenter_key}
+    body = copy.deepcopy(resource.body)
+    config = body["properties"]["configuration"]
+    config["secrets"] = arm_value(config["secrets"], scope)
+    for container in body["properties"]["template"]["containers"]:
+        container["env"] = arm_value(container["env"], scope)
+    return body
 
 
 def test_build_has_no_diagnostics() -> None:
@@ -208,6 +269,30 @@ def test_container_resources_and_secret_ref() -> None:
         assert name in env, name
     assert env["EVENTHUBS_CONSUMER_GROUP"]["value"] == "live-state"
     assert env["TACTISTREAM_ARTIFACT_STORE"]["value"] == "blob"
+
+
+def test_presenter_key_is_a_secure_param_defaulting_to_disabled() -> None:
+    declared = compile_main().template["parameters"]["presenterKey"]
+    assert declared == {**declared, "type": "securestring", "defaultValue": ""}
+    supplied = json.loads((REPO / "infra" / "main.parameters.json").read_text(encoding="utf-8"))["parameters"]
+    assert supplied["presenterKey"] == {"value": "${TACTISTREAM_PRESENTER_KEY=}"}
+
+    app = container_app()
+    (container,) = app["properties"]["template"]["containers"]
+    assert "TACTISTREAM_PRESENTER_KEY" not in {e["name"] for e in container["env"]}
+    assert "presenter-key" not in {s["name"] for s in app["properties"]["configuration"]["secrets"]}
+
+
+def test_presenter_key_becomes_a_secret_ref_when_set() -> None:
+    app = container_app(presenter_key="k")
+    (container,) = app["properties"]["template"]["containers"]
+    env = {e["name"]: e for e in container["env"]}
+    assert env["TACTISTREAM_PRESENTER_KEY"] == {
+        "name": "TACTISTREAM_PRESENTER_KEY",
+        "secretRef": "presenter-key",
+    }
+    secrets = {s["name"]: s for s in app["properties"]["configuration"]["secrets"]}
+    assert secrets["presenter-key"] == {"name": "presenter-key", "value": "k"}
 
 
 def test_container_app_uses_managed_identity_for_registry() -> None:

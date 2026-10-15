@@ -48,6 +48,10 @@ param bus string = 'eventhubs'
 ])
 param agents string = 'foundry'
 
+@secure()
+@description('Presenter key for /presenter (azd env TACTISTREAM_PRESENTER_KEY); empty disables presenter mode.')
+param presenterKey string = ''
+
 @description('Suffix that keeps globally unique names stable for this resource group.')
 var token = uniqueString(subscription().id, resourceGroup().id, location)
 
@@ -153,6 +157,7 @@ module containerApps 'modules/containerapps.bicep' = {
     bus: bus
     agents: agents
     deploymentEnvironment: 'production'
+    presenterKey: presenterKey
   }
   dependsOn: [
     monitoring
