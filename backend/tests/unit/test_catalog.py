@@ -91,7 +91,7 @@ def test_claim_and_status_templates_have_fan_and_analyst_text(language: str) -> 
 @pytest.mark.parametrize("language", ["en", "hi"])
 def test_placeholders_match_declared_slots(catalog: Catalog, language: str) -> None:
     texts = raw(f"{language}.json")
-    for key in catalog.keys():
+    for key in catalog.keys(""):
         spec = catalog.spec(key)
         used = {name for text in texts[key].values() for name in PLACEHOLDER.findall(text)}
         assert used <= set(spec.slots) | set(DERIVED_SLOTS), key
@@ -102,7 +102,7 @@ def test_placeholders_match_declared_slots(catalog: Catalog, language: str) -> N
 
 @pytest.mark.parametrize("language", ["en", "hi"])
 def test_event_time_slots_appear_only_in_analyst_text(catalog: Catalog, language: str) -> None:
-    for key in catalog.keys():
+    for key in catalog.keys(""):
         spec = catalog.spec(key)
         if spec.kind not in CLAIM_KINDS:
             continue
@@ -111,7 +111,7 @@ def test_event_time_slots_appear_only_in_analyst_text(catalog: Catalog, language
 
 
 def test_metric_slots_declare_kinds_unit_and_precision(catalog: Catalog) -> None:
-    for key in catalog.keys():
+    for key in catalog.keys(""):
         for name, slot in catalog.spec(key).slots.items():
             if slot.type == "metric":
                 assert slot.metric_kinds, (key, name)
@@ -136,7 +136,7 @@ def test_data_model_slot_specs(catalog: Catalog) -> None:
 
 
 def test_title_keys_exist_with_kind_title(catalog: Catalog) -> None:
-    for key in catalog.keys():
+    for key in catalog.keys(""):
         for title in catalog.spec(key).title_keys:
             assert catalog.spec(title).kind == "title", (key, title)
     assert catalog.spec("interp.space_opened_by_run").title_keys == (
@@ -175,7 +175,7 @@ def test_claim_templates_for_space_creation(catalog: Catalog) -> None:
 
 @pytest.mark.parametrize("language", ["en", "hi"])
 def test_no_template_contains_causal_overreach(catalog: Catalog, language: str) -> None:
-    for key in catalog.keys():
+    for key in catalog.keys(""):
         for mode in ("fan", "analyst"):
             text = catalog.text(key, mode, language)
             assert find_causal_terms(text) == [], (key, mode, text)
@@ -184,7 +184,7 @@ def test_no_template_contains_causal_overreach(catalog: Catalog, language: str) 
 def test_hindi_text_uses_western_digits() -> None:
     for key, entry in raw("hi.json").items():
         for text in entry.values():
-            assert not re.search(r"[०-९]", text), key
+            assert not re.search(r"[\u0966-\u096F]", text), key
 
 
 def test_lexicon_covers_fr_012() -> None:
