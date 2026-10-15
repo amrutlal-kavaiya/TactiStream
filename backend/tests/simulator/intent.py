@@ -7,7 +7,7 @@ Each `check_<family>(output, label_window)` returns failure messages; an empty l
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from typing import Any
 
@@ -403,6 +403,9 @@ def check_switch_closed(output: Any, label_window: Window) -> list[str]:
     return failures
 
 
+IntentCheck = Callable[[Any, Window], list[str]]
+
+
 def _strip(record: Mapping[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in record.items() if k != "match_id"}
 
@@ -441,3 +444,9 @@ def check_tracking_gap(output: Any, label_window: Window) -> list[str]:
             failures.append(f"{got.frame_id} differs from space_creation outside the gap")
             break
     return failures[:5]
+
+
+LIBRARY: Mapping[str, IntentCheck] = {
+    "space_creation": check_space_creation,
+}
+"""Every implemented scenario family and its intent check (the T047 library matrix)."""
