@@ -56,8 +56,10 @@ Locally, put `TACTISTREAM_PRESENTER_KEY=local-presenter-key` (at least 16 charac
    unlisted YouTube URL.
    - When you pick a video, the page shows its duration and resolution before uploading. It shows a green "Meets video
      spec" badge, or a warning badge naming the failed rule. Warnings don't block the upload.
-   - Uploads stream to the server with a progress bar. The limits are 500 MB for video and 1 MB for captions. `.srt`
-     captions are converted to `.vtt` on save.
+   - Uploads stream to the server with a progress bar and can be cancelled. The limits are 500 MB for video and 1 MB
+     for captions; larger files are refused before upload. `.srt` captions are converted to `.vtt` on save.
+   - A real 100–300 MB video can take minutes to upload through Container Apps ingress. Test one upload on the
+     deployed app well before recording day. If it times out, use an unlisted YouTube link for main and backup.
    - Duration and resolution are what the browser reported (`client_reported`). Confirm the real values with
      `ffprobe` before recording day.
 4. **Publish.** This switch makes the media visible to judges. It stays disabled until the main slot has a file or
