@@ -86,3 +86,4 @@ def test_agent_budgets_carry_caps_minimums_and_reserve(monkeypatch: pytest.Monke
     assert budgets.reserve_ms == 400
     assert budgets.repair_min_remaining_ms == 3000
     assert budgets.token_budget is None
+    assert budgets.deadline_ms == 8000

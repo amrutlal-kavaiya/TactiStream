@@ -132,4 +132,5 @@ class Settings(BaseSettings):
             min_ms=dict(MIN_STEP_MS),
             reserve_ms=self.release_reserve_ms,
             repair_min_remaining_ms=self.repair_min_remaining_ms,
+            deadline_ms=self.narrative_deadline_ms,
         )
