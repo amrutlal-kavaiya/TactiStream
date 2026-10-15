@@ -95,6 +95,7 @@ class PossessionState:
     team_id: TeamId | None          # possessing / last-touch team
     player_id: PlayerId | None
     restart_team: TeamId | None     # set in DEAD after out_of_play
+    deflected_by: TeamId | None = None  # LOOSE after a blocked/on_target shot: block, parry or save by that team
 class IllegalTransition(ValueError): ...
 LEGAL_TRANSITIONS: Mapping[tuple[Phase, EventType], TransitionRule]
 def transition(state: PossessionState, event: MatchEvent) -> PossessionState: ...
@@ -118,9 +119,10 @@ Legal-transition table (`T` = possessing team, `O` = opponent, `p` = player in c
 | CONTROLLED(T, p) | `period_end` | p | `null` | ENDED |
 | LOOSE(T) | `interception` | O | `won` | CONTROLLED(O, actor) |
 | LOOSE(T) | `ball_recovery` | T or O | `null` | CONTROLLED(actor team, actor) |
-| LOOSE(T) | `out_of_play` | last-touch player | `null` | DEAD(restart_team = opponent of actor team) |
+| LOOSE(T) | `out_of_play` | last-touch player: the actor that made the ball loose; after a `blocked` / `on_target` shot (`deflected_by` set) any player of the defending team | `null` | DEAD(restart_team = opponent of actor team) |
 
-`IN_FLIGHT` is internal to kinematics (ball between pass start and arrival); events are never emitted inside it. A
+Blocks, parries and saves are not events, so the deflecting player is never named; last touch after such a shot is
+enforced at team level (`deflected_by`). `IN_FLIGHT` is internal to kinematics (ball between pass start and arrival); events are never emitted inside it. A
 **turnover** (used by 003) is `interception`, `tackle` with `won`, or `ball_recovery` by the team that did not last possess.
 
 ## Kinematics (`simulator/kinematics.py`)

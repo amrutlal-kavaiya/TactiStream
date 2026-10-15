@@ -16,6 +16,7 @@ from tactistream.simulator.possession import (
 START = PossessionState(Phase.DEAD, None, None, None)
 BLUE_08 = PossessionState(Phase.CONTROLLED, "blue", "blue-08", None)
 BLUE_LOOSE = PossessionState(Phase.LOOSE, "blue", "blue-08", None)
+BLUE_DEFLECTED = PossessionState(Phase.LOOSE, "blue", "blue-08", None, deflected_by="amber")
 RESTART_BLUE = PossessionState(Phase.DEAD, "amber", "amber-04", "blue")
 ENDED = PossessionState(Phase.ENDED, "blue", "blue-08", None)
 _seq = iter(range(1, 10_000))
@@ -78,9 +79,9 @@ LEGAL_CASES = [
         PossessionState(Phase.CONTROLLED, "blue", "blue-11", None),
     ),
     ("controlled_pass_incomplete", BLUE_08, ev("pass", "blue-08", outcome="incomplete"), BLUE_LOOSE),
-    ("controlled_shot_on_target", BLUE_08, ev("shot", "blue-08", outcome="on_target"), BLUE_LOOSE),
+    ("controlled_shot_on_target", BLUE_08, ev("shot", "blue-08", outcome="on_target"), BLUE_DEFLECTED),
     ("controlled_shot_off_target", BLUE_08, ev("shot", "blue-08", outcome="off_target"), BLUE_LOOSE),
-    ("controlled_shot_blocked", BLUE_08, ev("shot", "blue-08", outcome="blocked"), BLUE_LOOSE),
+    ("controlled_shot_blocked", BLUE_08, ev("shot", "blue-08", outcome="blocked"), BLUE_DEFLECTED),
     ("controlled_clearance", BLUE_08, ev("clearance", "blue-08"), BLUE_LOOSE),
     (
         "controlled_pressure",
@@ -133,6 +134,12 @@ LEGAL_CASES = [
     (
         "loose_out_of_play",
         BLUE_LOOSE,
+        ev("out_of_play", "blue-08"),
+        PossessionState(Phase.DEAD, "blue", "blue-08", "amber"),
+    ),
+    (
+        "deflected_out_of_play",
+        BLUE_DEFLECTED,
         ev("out_of_play", "amber-01"),
         PossessionState(Phase.DEAD, "amber", "amber-01", "blue"),
     ),
@@ -182,6 +189,9 @@ ILLEGAL_CASES = [
     ("pass_to_opponent", BLUE_08, ev("pass", "blue-08", recipient_id="amber-04", outcome="complete")),
     ("shot_bad_outcome", BLUE_08, ev("shot", "blue-08", outcome="won")),
     ("interception_while_controlled", BLUE_08, ev("interception", "amber-05", outcome="won")),
+    ("loose_out_of_play_not_last_touch", BLUE_LOOSE, ev("out_of_play", "blue-09")),
+    ("loose_out_of_play_by_opponent_without_deflection", BLUE_LOOSE, ev("out_of_play", "amber-01")),
+    ("deflected_out_of_play_by_shooter", BLUE_DEFLECTED, ev("out_of_play", "blue-08")),
 ]
 
 

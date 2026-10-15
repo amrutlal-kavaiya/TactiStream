@@ -33,13 +33,18 @@ class PossessionState:
     player_id: str | None
     restart_team: TeamId | None
     """Set in DEAD after `out_of_play`; `None` in DEAD means start of period (kickoff)."""
+    deflected_by: TeamId | None = None
+    """Set in LOOSE after a `blocked` or `on_target` shot: the defending team made the last touch (block,
+    parry or save). Events never name that player, so last-touch is enforced at team level."""
 
     @classmethod
     def start(cls) -> PossessionState:
         return cls(Phase.DEAD, None, None, None)
 
 
-ActorRule = Literal["kickoff_team", "restart_team", "any", "controller", "opponent", "opponent_of_last_touch"]
+ActorRule = Literal[
+    "kickoff_team", "restart_team", "any", "controller", "opponent", "opponent_of_last_touch", "last_touch"
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,7 +73,7 @@ LEGAL_TRANSITIONS: Mapping[tuple[Phase, EventType], TransitionRule] = {
     (Phase.CONTROLLED, "period_end"): _rule("controller", None),
     (Phase.LOOSE, "interception"): _rule("opponent_of_last_touch", "won"),
     (Phase.LOOSE, "ball_recovery"): _rule("any", None),
-    (Phase.LOOSE, "out_of_play"): _rule("any", None),
+    (Phase.LOOSE, "out_of_play"): _rule("last_touch", None),
 }
 
 
@@ -101,6 +106,11 @@ def _check_actor(rule: TransitionRule, state: PossessionState, event: MatchEvent
             return f"{actor} belongs to the possessing team"
     elif rule.actor == "opponent_of_last_touch" and team == state.team_id:
         return f"{actor} belongs to the last-touch team"
+    elif rule.actor == "last_touch":
+        if state.deflected_by is not None and team != state.deflected_by:
+            return f"{actor} did not touch last ({state.deflected_by} deflected the shot)"
+        if state.deflected_by is None and actor != state.player_id:
+            return f"{actor} did not touch last (last touch {state.player_id})"
     if rule.max_distance_m is not None:
         if event.end_m is None:
             return f"{event.event_type} needs end_m (position of the player in control)"
@@ -137,6 +147,8 @@ def transition(state: PossessionState, event: MatchEvent) -> PossessionState:
         if event.outcome == "incomplete":
             return PossessionState(Phase.LOOSE, team, actor, None)
         return PossessionState(Phase.CONTROLLED, team, recipient, None)
+    if kind == "shot" and event.outcome in ("blocked", "on_target"):
+        return PossessionState(Phase.LOOSE, team, actor, None, deflected_by=opponent(team))
     if kind in ("shot", "clearance"):
         return PossessionState(Phase.LOOSE, team, actor, None)
     if kind == "out_of_play":
