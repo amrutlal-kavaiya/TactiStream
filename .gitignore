@@ -1,5 +1,8 @@
 .superpowers/
 
+# Generated simulator output
+data/generated/
+
 # Environment
 .env
 .env.*

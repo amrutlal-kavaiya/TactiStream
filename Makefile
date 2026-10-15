@@ -4,10 +4,10 @@ SHELL := /bin/bash
 BACKEND := backend
 FRONTEND := frontend
 
-.PHONY: help install dev test e2e lint contracts smoke image image-smoke
+.PHONY: help install dev test e2e lint contracts smoke image image-smoke sim-hero
 
 help:
-	@echo "Targets: install dev test e2e lint contracts smoke image image-smoke"
+	@echo "Targets: install dev test e2e lint contracts smoke image image-smoke sim-hero"
 
 install:
 	cd $(BACKEND) && uv sync
@@ -53,3 +53,6 @@ image-smoke:
 	for i in $$(seq 1 60); do curl -fsS http://127.0.0.1:8000/healthz >/dev/null 2>&1 && break; sleep 0.5; done; \
 	cd $(BACKEND) && uv run tactistream-smoke deployed --base-url http://127.0.0.1:8000 --allow-memory && \
 	curl -fsS http://127.0.0.1:8000/ | grep -qi '<html' && echo "SPA index served"
+
+sim-hero:
+	cd $(BACKEND) && uv run tactistream-sim generate --scenario space_creation --seed 42 --variant A --split dev --out ../data/generated/hero --force

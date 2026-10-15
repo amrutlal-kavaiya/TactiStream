@@ -95,6 +95,7 @@ class PossessionState:
     team_id: TeamId | None          # possessing / last-touch team
     player_id: PlayerId | None
     restart_team: TeamId | None     # set in DEAD after out_of_play
+    deflected_by: TeamId | None = None  # LOOSE after a blocked/on_target shot: block, parry or save by that team
 class IllegalTransition(ValueError): ...
 LEGAL_TRANSITIONS: Mapping[tuple[Phase, EventType], TransitionRule]
 def transition(state: PossessionState, event: MatchEvent) -> PossessionState: ...
@@ -118,9 +119,10 @@ Legal-transition table (`T` = possessing team, `O` = opponent, `p` = player in c
 | CONTROLLED(T, p) | `period_end` | p | `null` | ENDED |
 | LOOSE(T) | `interception` | O | `won` | CONTROLLED(O, actor) |
 | LOOSE(T) | `ball_recovery` | T or O | `null` | CONTROLLED(actor team, actor) |
-| LOOSE(T) | `out_of_play` | last-touch player | `null` | DEAD(restart_team = opponent of actor team) |
+| LOOSE(T) | `out_of_play` | last-touch player: the actor that made the ball loose; after a `blocked` / `on_target` shot (`deflected_by` set) any player of the defending team | `null` | DEAD(restart_team = opponent of actor team) |
 
-`IN_FLIGHT` is internal to kinematics (ball between pass start and arrival); events are never emitted inside it. A
+Blocks, parries and saves are not events, so the deflecting player is never named; last touch after such a shot is
+enforced at team level (`deflected_by`). `IN_FLIGHT` is internal to kinematics (ball between pass start and arrival); events are never emitted inside it. A
 **turnover** (used by 003) is `interception`, `tackle` with `won`, or `ball_recovery` by the team that did not last possess.
 
 ## Kinematics (`simulator/kinematics.py`)
@@ -132,7 +134,7 @@ BALL_CARRY_MAX_DIST_M = 0.5; BALL_CARRY_OFFSET_M = 0.3
 REPOSITION_SPEED_MPS = 7.0; REPOSITION_ACCEL_MPS2 = 4.0; REPOSITION_MIN_MS = 3000; FRAME_MS = 100
 
 @dataclass(frozen=True) class Keyframe: t_ms: int; pos: tuple[float, float]
-class KinematicsError(ValueError): player_id: str; t_ms: int; speed: float; accel: float
+class KinematicsError(ValueError): player_id: str; t_ms: int; speed: float; accel: float; code: Literal["speed_exceeded", "accel_exceeded"]
 def spline_track(keys: Sequence[Keyframe], t_grid: np.ndarray) -> np.ndarray: ...          # C1 cubic Hermite (Catmull–Rom tangents)
 def follow_track(targets: np.ndarray, start: tuple[float, float], start_vel: tuple[float, float],
                  max_speed: float, max_accel: float) -> np.ndarray: ...                      # velocity/accel-clamped follower
@@ -286,7 +288,9 @@ def validate_envelopes(envelopes: Sequence[FeedEnvelope]) -> ValidationReport: .
 
 Tolerances on serialized (0.01 m) data: speed via 1-frame difference ≤ 9.5 + 0.15 m/s; acceleration via 200 ms second
 difference ≤ 6.0 + 0.5 m/s²; distances +0.02 m. Speed/accel are only measured between consecutive visible frames; across an
-invisibility gap the mean speed over the gap must be ≤ 9.5 m/s. `attack_direction_inconsistent`: every shot moves toward
+invisibility gap the mean speed over the gap must be ≤ 9.5 m/s. Ball: speed between consecutive visible frames
+≤ `SHOT_SPEED_MAX_MPS` + 0.15 = 35.15 m/s (`speed_exceeded`, detail starts with `ball`); every `shot` has
+|end_m − start_m| / duration ≤ 35 m/s (`pass_ball_speed`, detail starts with `shot`). `attack_direction_inconsistent`: every shot moves toward
 the goal the shooter's team attacks in that period, and `on_target`/`off_target` shots end within 2 m of that goal line;
 kickoff at (52.5, 34) ± 0.5 m; metadata `periods` contains every period used by a record.
 

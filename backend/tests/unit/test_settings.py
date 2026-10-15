@@ -34,6 +34,7 @@ def test_defaults() -> None:
     assert s.fabric_kusto_database is None
     assert s.azure_location is None
     assert s.narrative_deadline_ms == 8000
+    assert s.max_sessions == 8
 
 
 def test_env_override(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -59,6 +60,7 @@ def test_every_env_example_name_is_read(monkeypatch: pytest.MonkeyPatch) -> None
         "TACTISTREAM_ANALYTICS_PUBLISH": "True",
         "TACTISTREAM_HISTORY": "eventhouse",
         "TACTISTREAM_HISTORY_TIMEOUT_MS": "1234",
+        "TACTISTREAM_MAX_SESSIONS": "3",
     }
     for name in example_names():
         monkeypatch.setenv(name, values.get(name, f"v-{name.lower()}"))
