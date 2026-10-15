@@ -196,6 +196,21 @@ describe('Media slots', () => {
     expect(xhr.aborted).toBe(true)
   })
 
+  it.each([
+    ['Main demo video', 'big.mp4', 'video/mp4', 500 * 1024 * 1024 + 1],
+    ['Captions', 'big.vtt', 'text/vtt', 1024 * 1024 + 1],
+  ])('refuses a %s file over the size limit before any upload', async (region, name, type, size) => {
+    await unlocked()
+    const slot = within(screen.getByRole('region', { name: region }))
+    const file = new File([new Uint8Array(4)], name, { type })
+    Object.defineProperty(file, 'size', { value: size })
+    await userEvent.upload(slot.getByLabelText('Choose file'), file)
+
+    expect(await slot.findByText(/The file is too large/)).toBeInTheDocument()
+    expect(slot.queryByRole('button', { name: 'Upload' })).not.toBeInTheDocument()
+    expect(MockXHR.instances).toHaveLength(0)
+  })
+
   it('offers no link input for captions', async () => {
     await unlocked()
     const captions = within(screen.getByRole('region', { name: 'Captions' }))

@@ -60,6 +60,10 @@ function errorKey(error: unknown): MessageKey {
   }
 }
 
+/** Must match the server limits in `routes_presenter.py`. */
+const MAX_VIDEO_BYTES = 500 * 1024 * 1024
+const MAX_CAPTIONS_BYTES = 1024 * 1024
+
 const formatBytes = (bytes: number) =>
   bytes < 1024 * 1024 ? `${String(Math.ceil(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`
 
@@ -145,8 +149,9 @@ export function MediaSlotCard({
 
   async function select(file: File | undefined) {
     setError(null)
-    if (!file) {
+    if (!file || file.size > (isVideo ? MAX_VIDEO_BYTES : MAX_CAPTIONS_BYTES)) {
       setPending(null)
+      if (file) setError('errorMediaTooLarge')
       return
     }
     setPending({ file, meta: isVideo ? await readVideoMeta(file) : null })
