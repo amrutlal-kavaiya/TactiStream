@@ -109,7 +109,7 @@ description: "Task list for 001 walking skeleton"
 ## Phase 5: User Story 3 — Contract-first CI (P2)
 
 - [x] T052 [US3] Extend `.github/workflows/ci.yml`: job `contracts` (backend contract tests + `npm run contracts:gen` + `git diff --exit-code`), job `e2e` (install Playwright chromium, build frontend, run `npm run e2e`), cache uv and npm; all jobs on push and PR to `main` (push widened to every branch; `contracts` runs `make contracts`)
-- [ ] T053 [US3] On a throwaway branch rename `MatchEvent.player_id` → `actor_id`; confirm CI fails in `contracts`; delete branch; note the run URL in the PR description (SC-005) — (local proof done; GitHub run URL pending first push)
+- [x] T053 [US3] On a throwaway branch rename `MatchEvent.player_id` → `actor_id`; confirm CI fails in `contracts`; delete branch; note the run URL in the PR description (SC-005) — CI failed in `contracts` (and backend, e2e) on 2026-10-15: https://github.com/amrutlal-kavaiya/TactiStream/actions/runs/38672001218
 
 ---
 
@@ -132,7 +132,7 @@ every US1 behaviour and test unchanged.
 - [x] T060 Update `frontend/tests/unit/{InsightCard,EvidenceDrawer,App}.test.tsx` to Fluent roles where markup changes (behaviour assertions unchanged, StrictMode/inert focus-return test kept) and extend `tokens.test.ts`: team colours and text vs `colorNeutralBackground1`/`colorNeutralBackground2` of both brand themes ≥ 4.5:1 for text, ≥ 3:1 for non-text team swatches
 - [x] T061 Rebuild `TopBar`, `SourceBadge`, `PlaybackControls` (Toolbar + icons + tooltips), `InsightCard` (Card), `EvidenceDrawer` (OverlayDrawer), `EventList` (Table) and notices (MessageBar) per the registry component map; stage shows a placeholder Card "Pitch view arrives with tactical replay"; reduce `app.css` to reset + grid and `tokens.css` to team/pitch tokens; run unit suites → green
 - [x] T062 Extend `frontend/tests/e2e/skeleton.spec.ts`: existing flow unchanged + theme toggle switches and persists across reload + `@axe-core/playwright` scan (dark and light) with zero serious/critical violations; run `--repeat-each=5`
-- [ ] T063 Capture screenshots (dark and light, card visible, drawer open) to `docs/screenshots/001-fluent-{dark,light,drawer}.png` via Playwright; record post-change gzipped bundle size in the batch report
+- [x] T063 Capture screenshots (dark and light, card visible, drawer open) to `docs/screenshots/001-fluent-{dark,light,drawer}.png` via Playwright; record post-change gzipped bundle size in the batch report
 
 ---
 
