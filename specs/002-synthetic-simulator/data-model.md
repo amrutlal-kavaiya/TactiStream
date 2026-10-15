@@ -288,7 +288,9 @@ def validate_envelopes(envelopes: Sequence[FeedEnvelope]) -> ValidationReport: .
 
 Tolerances on serialized (0.01 m) data: speed via 1-frame difference ≤ 9.5 + 0.15 m/s; acceleration via 200 ms second
 difference ≤ 6.0 + 0.5 m/s²; distances +0.02 m. Speed/accel are only measured between consecutive visible frames; across an
-invisibility gap the mean speed over the gap must be ≤ 9.5 m/s. `attack_direction_inconsistent`: every shot moves toward
+invisibility gap the mean speed over the gap must be ≤ 9.5 m/s. Ball: speed between consecutive visible frames
+≤ `SHOT_SPEED_MAX_MPS` + 0.15 = 35.15 m/s (`speed_exceeded`, detail starts with `ball`); every `shot` has
+|end_m − start_m| / duration ≤ 35 m/s (`pass_ball_speed`, detail starts with `shot`). `attack_direction_inconsistent`: every shot moves toward
 the goal the shooter's team attacks in that period, and `on_target`/`off_target` shots end within 2 m of that goal line;
 kickoff at (52.5, 34) ± 0.5 m; metadata `periods` contains every period used by a record.
 

@@ -223,16 +223,16 @@ def _check_kinematics(out: _Collector, grid: _Grid) -> None:
                 grid.frame_id(k),
                 f"{pid} {float(accel[k - 2]):.2f} m/s² over 200 ms (max {max_accel:.2f})",
             )
-    visible = np.flatnonzero(~np.isnan(grid.ball[:, 0]))
-    adjacent = np.flatnonzero(np.diff(visible) == 1)
-    steps = grid.ball[visible[adjacent + 1]] - grid.ball[visible[adjacent]]
-    ball_speeds = np.hypot(steps[:, 0], steps[:, 1]) / dt
-    over = np.flatnonzero(ball_speeds > BALL_FRAME_SPEED_MAX_MPS)
-    if len(over):
-        m = int(over[0])
+    shown = np.flatnonzero(~np.isnan(grid.ball[:, 0]))
+    adjacent = np.flatnonzero(np.diff(shown) == 1)
+    ball_steps = grid.ball[shown[adjacent + 1]] - grid.ball[shown[adjacent]]
+    ball_speeds = np.hypot(ball_steps[:, 0], ball_steps[:, 1]) / dt
+    too_fast = np.flatnonzero(ball_speeds > BALL_FRAME_SPEED_MAX_MPS)
+    if len(too_fast):
+        m = int(too_fast[0])
         out.add(
             "speed_exceeded",
-            grid.frame_id(int(visible[adjacent[m] + 1])),
+            grid.frame_id(int(shown[adjacent[m] + 1])),
             f"ball {float(ball_speeds[m]):.2f} m/s over one frame (max {BALL_FRAME_SPEED_MAX_MPS:.2f})",
         )
     entities = [*grid.players.items(), ("ball", grid.ball)]
