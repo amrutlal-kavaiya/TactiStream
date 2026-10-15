@@ -80,20 +80,40 @@ def feed_bytes(envelopes: Sequence[FeedEnvelope]) -> bytes:
 
 
 def write_output(output: SimulationOutput, out_dir: Path, *, force: bool = False) -> WrittenFiles:
-    """Write `feed.jsonl` and `manifest.json` via a sibling temp dir; nothing lands in `out_dir` on error."""
+    """Write `feed.jsonl` and `manifest.json` into a sibling temp dir, then swap it in with directory renames.
+
+    A reader never sees a feed and a manifest from different runs; nothing lands in `out_dir` on error.
+    Other files already in `out_dir` are copied across on `force`.
+    """
     if out_dir.exists() and any(out_dir.iterdir()) and not force:
         raise FileExistsError(f"{out_dir} is not empty (use --force to overwrite)")
     feed = feed_bytes(to_envelopes(output))
     out_dir.parent.mkdir(parents=True, exist_ok=True)
     tmp = Path(tempfile.mkdtemp(prefix=f".{out_dir.name}.", dir=out_dir.parent))
+    old_holder = Path(tempfile.mkdtemp(prefix=f".{out_dir.name}.old.", dir=out_dir.parent))
     try:
-        (tmp / FEED_FILE).write_bytes(feed)
-        (tmp / MANIFEST_FILE).write_text(output.manifest.to_canonical_json() + "\n", encoding="utf-8")
+        new = tmp / "new"
+        new.mkdir()
+        (new / FEED_FILE).write_bytes(feed)
+        (new / MANIFEST_FILE).write_text(output.manifest.to_canonical_json() + "\n", encoding="utf-8")
         if out_dir.exists():
-            for name in (MANIFEST_FILE, FEED_FILE):
-                os.replace(tmp / name, out_dir / name)
+            for entry in out_dir.iterdir():
+                if entry.name in (FEED_FILE, MANIFEST_FILE):
+                    continue
+                if entry.is_dir() and not entry.is_symlink():
+                    shutil.copytree(entry, new / entry.name, symlinks=True)
+                else:
+                    shutil.copy2(entry, new / entry.name, follow_symlinks=False)
+            old = old_holder / "old"
+            os.replace(out_dir, old)
+            try:
+                os.replace(new, out_dir)
+            except BaseException:
+                os.replace(old, out_dir)
+                raise
         else:
-            os.replace(tmp, out_dir)
+            os.replace(new, out_dir)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+        shutil.rmtree(old_holder, ignore_errors=True)
     return WrittenFiles(out_dir / FEED_FILE, out_dir / MANIFEST_FILE, hashlib.sha256(feed).hexdigest())

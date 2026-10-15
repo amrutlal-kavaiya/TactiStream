@@ -2,6 +2,8 @@ import ast
 import json
 from pathlib import Path
 
+import pytest
+
 from tactistream.simulator.config import SimulationConfig
 from tactistream.simulator.engine import simulate
 from tactistream.simulator.io import feed_bytes, to_envelopes
@@ -38,6 +40,8 @@ def _violations(path: Path) -> list[str]:
                 found.append(f"{path}: from {node.module}")
             if any(alias.name == "GenerationManifest" for alias in node.names):
                 found.append(f"{path}: imports GenerationManifest")
+            if node.module == "tactistream.simulator" and any(a.name == "manifest" for a in node.names):
+                found.append(f"{path}: from tactistream.simulator import manifest")
         elif isinstance(node, ast.Import):
             found += [
                 f"{path}: import {a.name}"
@@ -48,6 +52,8 @@ def _violations(path: Path) -> list[str]:
             name = node.id if isinstance(node, ast.Name) else node.attr
             if name == "GenerationManifest":
                 found.append(f"{path}: uses GenerationManifest")
+            if isinstance(node, ast.Attribute) and node.attr == "manifest":
+                found.append(f"{path}:{node.lineno}: reads .manifest")
     return found
 
 
@@ -55,6 +61,27 @@ def test_live_code_never_touches_the_manifest() -> None:
     files = [f for pkg in LIVE_PACKAGES if (SRC / pkg).is_dir() for f in sorted((SRC / pkg).rglob("*.py"))]
     assert files
     assert [v for f in files for v in _violations(f)] == []
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "from tactistream.simulator import manifest\n",
+        "from tactistream.simulator import engine, manifest as m\n",
+        "import tactistream.simulator.manifest as m\n",
+        "def f(output):\n    return output.manifest.segments\n",
+    ],
+)
+def test_scan_flags_every_route_to_the_manifest(tmp_path: Path, source: str) -> None:
+    path = tmp_path / "live.py"
+    path.write_text(source, encoding="utf-8")
+    assert _violations(path)
+
+
+def test_scan_allows_unrelated_simulator_imports(tmp_path: Path) -> None:
+    path = tmp_path / "live.py"
+    path.write_text("from tactistream.simulator import engine\nx = engine.simulate\n", encoding="utf-8")
+    assert _violations(path) == []
 
 
 def _keys(value: object) -> set[str]:

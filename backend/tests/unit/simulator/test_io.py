@@ -1,10 +1,14 @@
 import hashlib
 import json
+import os
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from tactistream.simulator import io
+from tactistream.simulator.config import SimulationConfig
+from tactistream.simulator.engine import simulate
 from tactistream.simulator.io import BASE_PUBLISHED_EPOCH_MS, canonical_line, to_envelopes, write_output
 from tactistream.simulator.manifest import GenerationManifest
 from tactistream.transport.fixtures import load_fixture
@@ -52,6 +56,40 @@ def test_write_output_refuses_non_empty_dir_without_force(tmp_path: Path) -> Non
     assert written.feed_path == out / "feed.jsonl"
     assert (out / "manifest.json").exists()
     write_output(make_simulation_output(), out, force=True)
+
+
+def test_force_overwrite_never_pairs_feed_and_manifest_of_different_runs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "notes.txt").write_text("keep", encoding="utf-8")
+    write_output(simulate(SimulationConfig(42, "space_creation")), out, force=True)
+    seen: list[tuple[str, str]] = []
+
+    def consistent() -> None:
+        feed, manifest = out / "feed.jsonl", out / "manifest.json"
+        if feed.exists() and manifest.exists():
+            got = hashlib.sha256(feed.read_bytes()).hexdigest()
+            want = json.loads(manifest.read_text(encoding="utf-8"))["feed_sha256"]
+            seen.append((got, want))
+
+    for name in ("replace", "rename"):
+        real = getattr(os, name)
+
+        def spy(src: object, dst: object, *, _real: Any = real) -> None:
+            _real(src, dst)
+            consistent()
+
+        monkeypatch.setattr(os, name, spy)
+    second = simulate(SimulationConfig(1, "space_creation"))
+    written = write_output(second, out, force=True)
+    monkeypatch.undo()
+    assert seen, "write_output never renamed anything"
+    assert all(got == want for got, want in seen), seen
+    assert written.feed_sha256 == second.manifest.feed_sha256
+    assert (out / "notes.txt").read_text(encoding="utf-8") == "keep"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["out"]
 
 
 def test_failed_write_leaves_no_feed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
