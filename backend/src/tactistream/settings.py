@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+if TYPE_CHECKING:
+    from tactistream.agents.context import AgentBudgets
 
 _REPO_ROOT = Path(__file__).parents[3]
 PRESENTER_KEY_MIN_LENGTH = 16
@@ -60,6 +63,37 @@ class Settings(BaseSettings):
     environment: str = Field(default="dev", min_length=1, validation_alias="TACTISTREAM_ENVIRONMENT")
     presenter_key: SecretStr | None = Field(default=None, validation_alias="TACTISTREAM_PRESENTER_KEY")
 
+    demo_fixtures: bool = Field(default=False, validation_alias="TACTISTREAM_DEMO_FIXTURES")
+    trace_dir: Path | None = Field(default=None, validation_alias="TACTISTREAM_TRACE_DIR")
+    agent_scripts: Path = Field(
+        default=_REPO_ROOT / "data/fixtures/agent_scripts/demo-blue-amber-001.json",
+        validation_alias="TACTISTREAM_AGENT_SCRIPTS",
+    )
+    analyst_timeout_ms: int = Field(default=3500, ge=800, validation_alias="TACTISTREAM_ANALYST_TIMEOUT_MS")
+    verifier_timeout_ms: int = Field(default=2500, ge=600, validation_alias="TACTISTREAM_VERIFIER_TIMEOUT_MS")
+    producer_timeout_ms: int = Field(default=1500, ge=600, validation_alias="TACTISTREAM_PRODUCER_TIMEOUT_MS")
+    release_reserve_ms: int = Field(default=400, ge=0, validation_alias="TACTISTREAM_RELEASE_RESERVE_MS")
+    repair_min_remaining_ms: int = Field(
+        default=3000, ge=0, validation_alias="TACTISTREAM_REPAIR_MIN_REMAINING_MS"
+    )
+    min_tracking_coverage: float = Field(
+        default=0.8, ge=0, le=1, validation_alias="TACTISTREAM_MIN_TRACKING_COVERAGE"
+    )
+    narrative_min_rank: float = Field(
+        default=0.4, ge=0, le=1, validation_alias="TACTISTREAM_NARRATIVE_MIN_RANK"
+    )
+    narrative_max_concurrency: int = Field(
+        default=2, gt=0, validation_alias="TACTISTREAM_NARRATIVE_MAX_CONCURRENCY"
+    )
+    foundry_model_deployment_fast: str | None = None
+
+    @field_validator("trace_dir", "agent_scripts", mode="after")
+    @classmethod
+    def _repo_relative(cls, value: Path | None) -> Path | None:
+        if value is None or value.is_absolute():
+            return value
+        return _REPO_ROOT / value
+
     @field_validator("presenter_key", mode="before")
     @classmethod
     def _presenter_key_strength(cls, value: object) -> object:
@@ -78,4 +112,24 @@ class Settings(BaseSettings):
             raise ValueError("AZURE_STORAGE_ACCOUNT_URL is required when TACTISTREAM_ARTIFACT_STORE=blob")
         if self.history == "eventhouse" and not self.fabric_kusto_query_uri:
             raise ValueError("FABRIC_KUSTO_QUERY_URI is required when TACTISTREAM_HISTORY=eventhouse")
+        if self.agents == "scripted" and not self.agent_scripts.is_file():
+            raise ValueError(
+                f"TACTISTREAM_AGENT_SCRIPTS must name an existing file when TACTISTREAM_AGENTS=scripted "
+                f"({self.agent_scripts})"
+            )
         return self
+
+    def agent_budgets(self) -> AgentBudgets:
+        from tactistream.agents.context import MIN_STEP_MS, AgentBudgets
+
+        return AgentBudgets(
+            caps_ms={
+                "analyst": self.analyst_timeout_ms,
+                "verifier": self.verifier_timeout_ms,
+                "producer": self.producer_timeout_ms,
+                "single_agent": self.analyst_timeout_ms,
+            },
+            min_ms=dict(MIN_STEP_MS),
+            reserve_ms=self.release_reserve_ms,
+            repair_min_remaining_ms=self.repair_min_remaining_ms,
+        )

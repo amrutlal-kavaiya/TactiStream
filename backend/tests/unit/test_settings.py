@@ -62,6 +62,8 @@ def test_every_env_example_name_is_read(monkeypatch: pytest.MonkeyPatch) -> None
         "TACTISTREAM_HISTORY_TIMEOUT_MS": "1234",
         "TACTISTREAM_MAX_SESSIONS": "3",
         "TACTISTREAM_DEMO_FIXTURES": "True",
+        "TACTISTREAM_TRACE_DIR": "/tmp/tactistream-traces",
+        "TACTISTREAM_AGENT_SCRIPTS": "/tmp/tactistream-scripts.json",
         "TACTISTREAM_ANALYST_TIMEOUT_MS": "3100",
         "TACTISTREAM_VERIFIER_TIMEOUT_MS": "2100",
         "TACTISTREAM_PRODUCER_TIMEOUT_MS": "1100",
