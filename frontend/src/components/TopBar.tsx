@@ -1,5 +1,6 @@
 import { makeStyles, mergeClasses, Text, ToggleButton, tokens, Tooltip } from '@fluentui/react-components'
 import { DataTrending24Regular, WeatherMoon20Regular, WeatherSunny20Regular } from '@fluentui/react-icons'
+import type { ReactNode } from 'react'
 
 import type { MessageKey } from '../i18n/en'
 import { useT } from '../i18n/useT'
@@ -51,12 +52,14 @@ const useStyles = makeStyles({
 })
 
 export interface TopBarProps {
-  status: ConnectionStatus
+  /** Omitted on pages without a match connection. */
+  status?: ConnectionStatus
   themeName: ThemeName
   onToggleTheme: () => void
+  actions?: ReactNode
 }
 
-export function TopBar({ status, themeName, onToggleTheme }: TopBarProps) {
+export function TopBar({ status, themeName, onToggleTheme, actions }: TopBarProps) {
   const t = useT()
   const styles = useStyles()
   const sourceKind = useMatchStore((s) => s.metadata?.source.kind)
@@ -78,11 +81,14 @@ export function TopBar({ status, themeName, onToggleTheme }: TopBarProps) {
         </Text>
       )}
       <SourceBadge kind={sourceKind ?? 'synthetic'} testId="source-badge" />
-      <span className={styles.status} role="status" title={t('connection')} data-testid="connection-status">
-        <span className={mergeClasses(styles.dot, styles[status])} aria-hidden />
-        <Text>{t(STATUS_LABEL[status])}</Text>
-      </span>
+      {status && (
+        <span className={styles.status} role="status" title={t('connection')} data-testid="connection-status">
+          <span className={mergeClasses(styles.dot, styles[status])} aria-hidden />
+          <Text>{t(STATUS_LABEL[status])}</Text>
+        </span>
+      )}
       <span className={styles.spacer} />
+      {actions}
       <Tooltip content={t('lightTheme')} relationship="label">
         <ToggleButton
           appearance="subtle"

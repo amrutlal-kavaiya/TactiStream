@@ -103,7 +103,10 @@ describe('WatchPage', () => {
     )
     const video = document.querySelector('video')
     expect(video).toHaveAttribute('src', '/media/main?v=abc')
-    expect(video?.querySelector('track[kind="captions"][default]')).toHaveAttribute('src', '/media/captions?v=def')
+    expect(video?.querySelector('track[kind="captions"][default]')).toHaveAttribute(
+      'src',
+      '/media/captions?v=def',
+    )
     expect(screen.queryByText('The demo video is not published yet')).not.toBeInTheDocument()
   })
 })

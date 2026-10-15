@@ -72,7 +72,10 @@ describe('PresenterPage access', () => {
 
     expect(await screen.findByRole('heading', { name: '1. Rehearse' })).toBeInTheDocument()
     expect(sessionStorage.getItem(KEY_STORAGE)).toBe('k1')
-    expect(Object.values({ ...localStorage })).not.toContain('k1')
+    const stored = Array.from({ length: localStorage.length }, (_, i) =>
+      localStorage.getItem(localStorage.key(i) ?? ''),
+    )
+    expect(stored).not.toContain('k1')
     expect(calls.at(-1)?.headers.get('X-Presenter-Key')).toBe('k1')
   })
 
@@ -118,10 +121,12 @@ describe('Media slots', () => {
     expect(xhr?.headers['content-type']).toBe('video/mp4')
     expect(xhr?.body).toBe(file)
 
-    act(() => {
+    await act(async () => {
       xhr?.respond(200, mainRecord)
+      await Promise.resolve()
     })
-    expect(await mainSlot().findByText('demo.mp4')).toBeInTheDocument()
+    expect(mainSlot().queryByText('Selected — not uploaded yet')).not.toBeInTheDocument()
+    expect(mainSlot().getByText('demo.mp4')).toBeInTheDocument()
     expect(mainSlot().getByText('11.8 MB')).toBeInTheDocument()
   })
 
@@ -208,7 +213,12 @@ describe('Rehearsal', () => {
     const rows = timeline
       .split('\n')
       .filter((line) => /^\| \d:\d\d–\d:\d\d \|/.test(line))
-      .map((line) => line.split('|').slice(1, 4).map((cell) => cell.trim()))
+      .map((line) =>
+        line
+          .split('|')
+          .slice(1, 4)
+          .map((cell) => cell.trim()),
+      )
     expect(BEATS.map((b) => [b.time, b.action, b.intent])).toEqual(rows)
     expect(rows).toHaveLength(8)
   })

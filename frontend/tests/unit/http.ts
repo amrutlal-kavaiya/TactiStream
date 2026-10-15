@@ -74,7 +74,10 @@ export interface VideoMetadata {
 
 /** jsdom never loads media: setting `src` fires `loadedmetadata` with the given values. */
 export function mockVideoMetadata(meta: VideoMetadata) {
-  vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: () => 'blob:mock', revokeObjectURL: () => undefined }))
+  vi.stubGlobal(
+    'URL',
+    Object.assign(URL, { createObjectURL: () => 'blob:mock', revokeObjectURL: () => undefined }),
+  )
   Object.defineProperty(HTMLMediaElement.prototype, 'src', {
     configurable: true,
     get: () => '',
@@ -82,7 +85,16 @@ export function mockVideoMetadata(meta: VideoMetadata) {
       queueMicrotask(() => this.dispatchEvent(new Event('loadedmetadata')))
     },
   })
-  Object.defineProperty(HTMLMediaElement.prototype, 'duration', { configurable: true, get: () => meta.duration })
-  Object.defineProperty(HTMLVideoElement.prototype, 'videoWidth', { configurable: true, get: () => meta.width })
-  Object.defineProperty(HTMLVideoElement.prototype, 'videoHeight', { configurable: true, get: () => meta.height })
+  Object.defineProperty(HTMLMediaElement.prototype, 'duration', {
+    configurable: true,
+    get: () => meta.duration,
+  })
+  Object.defineProperty(HTMLVideoElement.prototype, 'videoWidth', {
+    configurable: true,
+    get: () => meta.width,
+  })
+  Object.defineProperty(HTMLVideoElement.prototype, 'videoHeight', {
+    configurable: true,
+    get: () => meta.height,
+  })
 }
