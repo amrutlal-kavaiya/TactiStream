@@ -229,11 +229,11 @@ def _check_kinematics(out: _Collector, grid: _Grid) -> None:
     ball_speeds = np.hypot(ball_steps[:, 0], ball_steps[:, 1]) / dt
     too_fast = np.flatnonzero(ball_speeds > BALL_FRAME_SPEED_MAX_MPS)
     if len(too_fast):
-        m = int(too_fast[0])
+        first = int(too_fast[0])
         out.add(
             "speed_exceeded",
-            grid.frame_id(int(shown[adjacent[m] + 1])),
-            f"ball {float(ball_speeds[m]):.2f} m/s over one frame (max {BALL_FRAME_SPEED_MAX_MPS:.2f})",
+            grid.frame_id(int(shown[adjacent[first] + 1])),
+            f"ball {float(ball_speeds[first]):.2f} m/s over one frame (max {BALL_FRAME_SPEED_MAX_MPS:.2f})",
         )
     entities = [*grid.players.items(), ("ball", grid.ball)]
     for name, pos in entities:
