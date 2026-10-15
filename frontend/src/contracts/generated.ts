@@ -6,34 +6,14 @@
 
 /**
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
- * via the `definition` "SchemaVersion".
- */
-export type SchemaVersion = string
-/**
- * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
- * via the `definition` "MatchId".
- */
-export type MatchId = string
-/**
- * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
  * via the `definition` "MomentId".
  */
 export type MomentId = string
 /**
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
- * via the `definition` "MomentPattern".
+ * via the `definition` "ClaimId".
  */
-export type MomentPattern = 'space_creation' | 'press_turnover' | 'switch_escape' | 'shot' | 'generic'
-/**
- * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
- * via the `definition` "EventId".
- */
-export type EventId = string
-/**
- * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
- * via the `definition` "Milliseconds".
- */
-export type Milliseconds = number
+export type ClaimId = string
 /**
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
  * via the `definition` "PlayerId".
@@ -41,19 +21,19 @@ export type Milliseconds = number
 export type PlayerId = string
 /**
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
- * via the `definition` "MetricId".
- */
-export type MetricId = string
-/**
- * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
  * via the `definition` "TeamId".
  */
 export type TeamId = 'blue' | 'amber'
 /**
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
- * via the `definition` "ClaimId".
+ * via the `definition` "MetricId".
  */
-export type ClaimId = string
+export type MetricId = string
+/**
+ * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
+ * via the `definition` "EventId".
+ */
+export type EventId = string
 /**
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
  * via the `definition` "EvidenceId".
@@ -71,14 +51,44 @@ export type FrameId = string
 export type AnnotationId = string
 /**
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
- * via the `definition` "InsightId".
+ * via the `definition` "ViewerMode".
  */
-export type InsightId = string
+export type ViewerMode = 'fan' | 'analyst'
+/**
+ * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
+ * via the `definition` "Language".
+ */
+export type Language = 'en' | 'hi'
+/**
+ * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
+ * via the `definition` "SchemaVersion".
+ */
+export type SchemaVersion = string
 /**
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
  * via the `definition` "TraceId".
  */
 export type TraceId = string
+/**
+ * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
+ * via the `definition` "MatchId".
+ */
+export type MatchId = string
+/**
+ * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
+ * via the `definition` "InsightId".
+ */
+export type InsightId = string
+/**
+ * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
+ * via the `definition` "Milliseconds".
+ */
+export type Milliseconds = number
+/**
+ * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
+ * via the `definition` "MomentPattern".
+ */
+export type MomentPattern = 'space_creation' | 'press_turnover' | 'switch_escape' | 'shot' | 'generic'
 /**
  * Stadium-fixed position in metres; pitch 105 x 68, origin bottom-left.
  *
@@ -94,16 +104,6 @@ export type PointM = [number, number]
  * via the `definition` "SourceKind".
  */
 export type SourceKind = 'synthetic' | 'event_feed_aligned_to_video' | 'video_derived'
-/**
- * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
- * via the `definition` "ViewerMode".
- */
-export type ViewerMode = 'fan' | 'analyst'
-/**
- * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
- * via the `definition` "Language".
- */
-export type Language = 'en' | 'hi'
 /**
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
  * via the `definition` "MetricKind".
@@ -205,7 +205,25 @@ export type FeedEnvelope =
     }
   | {
       schema_version: SchemaVersion
-      kind: 'agent_trace' | 'latency'
+      kind: 'agent_trace'
+      match_id: MatchId
+      /**
+       * event_id, frame_id, insight_id:version, trace_id or latency sample id; dedupe key together with kind.
+       */
+      record_id: string
+      /**
+       * Publisher wall clock (epoch ms).
+       */
+      published_ms: number
+      /**
+       * Set by the ingesting service on receipt (epoch ms).
+       */
+      server_receipt_ms?: number
+      payload: AgentTrace
+    }
+  | {
+      schema_version: SchemaVersion
+      kind: 'latency'
       match_id: MatchId
       /**
        * event_id, frame_id, insight_id:version, trace_id or latency sample id; dedupe key together with kind.
@@ -346,6 +364,12 @@ export type ClientMessage =
  * Every named contract type; see contracts/schemas.
  */
 export interface TactiStreamContracts {
+  TraceStep?: TraceStep
+  ToolCallRecord?: ToolCallRecord
+  ClaimTraceEntry?: ClaimTraceEntry
+  CheckFailure?: CheckFailure
+  Usage?: Usage
+  AgentTrace?: AgentTrace
   CandidateMoment?: CandidateMoment
   SlotValue?: SlotValue
   Claim?: Claim
@@ -392,37 +416,73 @@ export interface TactiStreamContracts {
   ClientMessage?: ClientMessage
 }
 /**
- * A deterministic, ranked window worth explaining. Never contains scenario labels or future outcomes beyond the trigger.
- *
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
- * via the `definition` "CandidateMoment".
+ * via the `definition` "TraceStep".
  */
-export interface CandidateMoment {
-  schema_version: SchemaVersion
-  match_id: MatchId
-  moment_id: MomentId
-  pattern: MomentPattern
-  trigger_event_id: EventId
-  window: {
-    start_ms: Milliseconds
-    end_ms: Milliseconds
-  }
-  involved_player_ids: PlayerId[]
-  metric_ids: MetricId[]
-  tracking_coverage?: number
-  rank_score: number
-  state_version: number
+export interface TraceStep {
+  index: number
+  role:
+    | 'gate'
+    | 'analyst'
+    | 'verifier_precheck'
+    | 'verifier'
+    | 'producer'
+    | 'checks'
+    | 'fallback'
+    | 'single_agent'
+    | 'deterministic'
+  attempt: number
+  prompt_version?: string
+  started_ms: number
+  latency_ms: number
+  budget_ms?: number
+  status: 'ok' | 'timeout' | 'model_error' | 'skipped' | 'failed'
+  error?: string
+  injected_fault?: 'bad_claim' | 'model_timeout'
+  /**
+   * Moment, claim, evidence IDs given to the step
+   */
+  input_ids: string[]
+  tool_calls: ToolCallRecord[]
+  analyst_output?: AnalystOutput
+  verdicts?: Verdict[]
+  producer_output?: ProducerOutput
+  check_failures?: CheckFailure[]
+  usage?: Usage
 }
 /**
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
- * via the `definition` "SlotValue".
+ * via the `definition` "ToolCallRecord".
  */
-export interface SlotValue {
-  kind: 'player' | 'team' | 'metric' | 'event_time'
-  player_id?: PlayerId
-  team_id?: TeamId
-  metric_id?: MetricId
-  event_id?: EventId
+export interface ToolCallRecord {
+  tool:
+    'get_match_snapshot' | 'get_event_window' | 'get_metric' | 'inspect_geometry' | 'build_recap_candidates'
+  args: {
+    [k: string]: unknown
+  }
+  status: 'ok' | 'error'
+  error_code?:
+    | 'future_evidence'
+    | 'unknown_metric'
+    | 'unknown_event'
+    | 'invalid_window'
+    | 'invalid_params'
+    | 'insufficient_tracking'
+  result_ids: string[]
+  latency_ms: number
+}
+/**
+ * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
+ * via the `definition` "AnalystOutput".
+ */
+export interface AnalystOutput {
+  moment_id: MomentId
+  /**
+   * @maxItems 2
+   */
+  claims: Claim[]
+  abstained: boolean
+  abstain_reason?: 'insufficient_tracking' | 'no_supported_interpretation' | 'timeout'
 }
 /**
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
@@ -451,16 +511,22 @@ export interface Claim {
 }
 /**
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
- * via the `definition` "AnalystOutput".
+ * via the `definition` "SlotValue".
  */
-export interface AnalystOutput {
-  moment_id: MomentId
+export interface SlotValue {
+  kind: 'player' | 'team' | 'metric' | 'event_time'
+  player_id?: PlayerId
+  team_id?: TeamId
+  metric_id?: MetricId
+  event_id?: EventId
   /**
-   * @maxItems 2
+   * Metric slots only: the value the agent asserts; the Verifier checks it against the metric engine.
    */
-  claims: Claim[]
-  abstained: boolean
-  abstain_reason?: 'insufficient_tracking' | 'no_supported_interpretation' | 'timeout'
+  value?: number
+  /**
+   * Metric slots only: the unit the agent asserts.
+   */
+  unit?: 'm' | 'ratio' | 'per_min' | 'score_0_100' | 'count' | 'cosine'
 }
 /**
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
@@ -481,14 +547,6 @@ export interface Verdict {
     | 'template_kind_mismatch'
   )[]
   note?: string
-}
-/**
- * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
- * via the `definition` "VerifierOutput".
- */
-export interface VerifierOutput {
-  moment_id: MomentId
-  verdicts: Verdict[]
 }
 /**
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
@@ -513,6 +571,125 @@ export interface ModePlan {
   annotations: AnnotationId[]
   priority: number
   panel: 'lower_third' | 'side_panel'
+}
+/**
+ * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
+ * via the `definition` "CheckFailure".
+ */
+export interface CheckFailure {
+  code:
+    | 'unsupported_number'
+    | 'unsupported_player'
+    | 'unknown_evidence'
+    | 'invalid_timing'
+    | 'expired'
+    | 'unapproved_claim'
+    | 'unrequested_annotation'
+    | 'unresolvable_annotation'
+    | 'future_evidence'
+    | 'title_mismatch'
+    | 'unknown_template'
+    | 'causal_overreach'
+    | 'variant_inconsistent'
+    | 'schema_invalid'
+  detail: string
+  mode?: ViewerMode
+  language?: Language
+}
+/**
+ * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
+ * via the `definition` "Usage".
+ */
+export interface Usage {
+  model_calls: number
+  tokens_in?: number | null
+  tokens_out?: number | null
+}
+/**
+ * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
+ * via the `definition` "ClaimTraceEntry".
+ */
+export interface ClaimTraceEntry {
+  claim: Claim
+  attempt: number
+  precheck?: Verdict
+  model_verdict?: Verdict
+  final?: Verdict
+  status: 'proposed' | 'approved' | 'rejected' | 'revised' | 'superseded' | 'unused'
+  superseded_by?: ClaimId
+  injected_fault?: 'bad_claim'
+}
+/**
+ * Public decision record of one narrative run: IDs, validated agent outputs, verdicts, tool calls, usage and timing. Never private model reasoning.
+ *
+ * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
+ * via the `definition` "AgentTrace".
+ */
+export interface AgentTrace {
+  schema_version: SchemaVersion
+  trace_id: TraceId
+  match_id: MatchId
+  moment_id: MomentId
+  insight_id: InsightId
+  insight_version: number
+  state_version: number
+  as_of_session_ms: Milliseconds
+  runner: 'three_agent' | 'single_agent' | 'deterministic'
+  outcome: 'released' | 'fallback' | 'abstained' | 'superseded' | 'cancelled'
+  fallback_reason?:
+    | 'timeout'
+    | 'verifier_rejected'
+    | 'output_check_failed'
+    | 'model_error'
+    | 'expired'
+    | 'insufficient_tracking'
+    | 'no_supported_claim'
+  fixture?: 'bad_claim' | 'model_timeout'
+  model_deployment?: string
+  trigger_receipt_ms: number
+  deadline_ms: number
+  started_ms: number
+  finished_ms: number
+  /**
+   * release broadcast − trigger receipt; absent if nothing was broadcast
+   */
+  narrative_latency_ms?: number
+  steps: TraceStep[]
+  claims: ClaimTraceEntry[]
+  producer_output?: ProducerOutput
+  check_failures?: CheckFailure[]
+  released_claim_ids?: ClaimId[]
+  usage: Usage
+}
+/**
+ * A deterministic, ranked window worth explaining. Never contains scenario labels or future outcomes beyond the trigger.
+ *
+ * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
+ * via the `definition` "CandidateMoment".
+ */
+export interface CandidateMoment {
+  schema_version: SchemaVersion
+  match_id: MatchId
+  moment_id: MomentId
+  pattern: MomentPattern
+  trigger_event_id: EventId
+  window: {
+    start_ms: Milliseconds
+    end_ms: Milliseconds
+  }
+  involved_player_ids: PlayerId[]
+  metric_ids: MetricId[]
+  tracking_coverage?: number
+  rank_score: number
+  state_version: number
+}
+/**
+ * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
+ * via the `definition` "VerifierOutput".
+ */
+export interface VerifierOutput {
+  moment_id: MomentId
+  verdicts: Verdict[]
 }
 /**
  * This interface was referenced by `TactiStreamContracts`'s JSON-Schema
@@ -655,7 +832,7 @@ export interface InsightPacket {
   claim_status: ClaimStatus
   title: string
   body: string
-  labels?: ('synthetic' | 'interpretation' | 'partial_tracking' | 'fallback')[]
+  labels?: ('synthetic' | 'interpretation' | 'partial_tracking' | 'fallback' | 'demo_fixture')[]
   /**
    * @minItems 1
    */
@@ -699,6 +876,7 @@ export interface LatencySample {
     | 'model_error'
     | 'expired'
     | 'insufficient_tracking'
+    | 'no_supported_claim'
   /**
    * event_id, or insight_id:version.
    */
@@ -841,6 +1019,7 @@ export interface NarrativeStatus {
     | 'model_error'
     | 'expired'
     | 'insufficient_tracking'
+    | 'no_supported_claim'
   trace_id?: TraceId
 }
 /**

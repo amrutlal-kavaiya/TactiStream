@@ -17,6 +17,7 @@ bus → state, state → agents, agents → UI, recap → studio graphics. Const
 | `feed_envelope.schema.json` | any FeedBus publisher | Event Hubs consumers, Fabric Eventstream |
 | `ws_message.schema.json` | API WebSocket | frontend |
 | `latency_sample.schema.json` | `LatencyRecorder` (API), 008 runners | App Insights logs, Fabric `Latency`, 008 |
+| `agent_trace.schema.json` | agent workflow (`TraceRecorder`) | trace API, agent trace view, Fabric `agent_traces`, 008 |
 
 Rules:
 

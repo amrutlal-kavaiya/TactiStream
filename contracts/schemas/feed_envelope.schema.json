@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://tactistream.dev/contracts/feed_envelope.schema.json",
   "title": "FeedEnvelope",
+  "$comment": "schema_version 1.1: agent_trace payload typed by agent_trace.schema.json (004 C1).",
   "description": "Unit published on the FeedBus / Azure Event Hubs. Partition key = match_id. Fabric Eventstream routes by kind.",
   "type": "object",
   "required": ["schema_version", "kind", "match_id", "record_id", "published_ms", "payload"],
@@ -19,6 +20,7 @@
     { "if": { "properties": { "kind": { "const": "metadata" } } }, "then": { "properties": { "payload": { "$ref": "match_metadata.schema.json" } } } },
     { "if": { "properties": { "kind": { "const": "event" } } }, "then": { "properties": { "payload": { "$ref": "event.schema.json" } } } },
     { "if": { "properties": { "kind": { "const": "frame" } } }, "then": { "properties": { "payload": { "$ref": "tracking_frame.schema.json" } } } },
-    { "if": { "properties": { "kind": { "const": "insight" } } }, "then": { "properties": { "payload": { "$ref": "insight_packet.schema.json" } } } }
+    { "if": { "properties": { "kind": { "const": "insight" } } }, "then": { "properties": { "payload": { "$ref": "insight_packet.schema.json" } } } },
+    { "if": { "properties": { "kind": { "const": "agent_trace" } } }, "then": { "properties": { "payload": { "$ref": "agent_trace.schema.json" } } } }
   ]
 }

@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://tactistream.dev/contracts/claim.schema.json",
   "title": "Claim ledger types (Analyst output, Verifier verdicts, Producer selection)",
+  "$comment": "schema_version 1.1: SlotValue.value/unit (004 C2).",
   "$defs": {
     "SlotValue": {
       "type": "object",
@@ -12,7 +13,9 @@
         "player_id": { "$ref": "common.schema.json#/$defs/PlayerId" },
         "team_id": { "$ref": "common.schema.json#/$defs/TeamId" },
         "metric_id": { "$ref": "common.schema.json#/$defs/MetricId" },
-        "event_id": { "$ref": "common.schema.json#/$defs/EventId" }
+        "event_id": { "$ref": "common.schema.json#/$defs/EventId" },
+        "value": { "type": "number", "description": "Metric slots only: the value the agent asserts; the Verifier checks it against the metric engine." },
+        "unit": { "enum": ["m", "ratio", "per_min", "score_0_100", "count", "cosine"], "description": "Metric slots only: the unit the agent asserts." }
       }
     },
     "Claim": {

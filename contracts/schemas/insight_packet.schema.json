@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://tactistream.dev/contracts/insight_packet.schema.json",
   "title": "InsightPacket",
+  "$comment": "schema_version 1.1: label demo_fixture (004 C3).",
   "description": "Machine-readable render instruction for one (mode, language) variant of one insight version. Never contains executable UI code.",
   "type": "object",
   "required": [
@@ -41,7 +42,7 @@
     "body": { "type": "string", "minLength": 1, "maxLength": 400 },
     "labels": {
       "type": "array",
-      "items": { "enum": ["synthetic", "interpretation", "partial_tracking", "fallback"] }
+      "items": { "enum": ["synthetic", "interpretation", "partial_tracking", "fallback", "demo_fixture"] }
     },
     "evidence_ids": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/EvidenceId" } },
     "claim_ids": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/ClaimId" } },

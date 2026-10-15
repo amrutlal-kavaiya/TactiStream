@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tactistream.dev/contracts/agent_trace.schema.json",
+  "title": "AgentTrace",
+  "description": "Public decision record of one narrative run: IDs, validated agent outputs, verdicts, tool calls, usage and timing. Never private model reasoning.",
+  "type": "object",
+  "required": ["schema_version", "trace_id", "match_id", "moment_id", "insight_id", "insight_version", "state_version",
+               "as_of_session_ms", "runner", "outcome", "trigger_receipt_ms", "deadline_ms", "started_ms", "finished_ms",
+               "steps", "claims", "usage"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
+    "trace_id": { "$ref": "common.schema.json#/$defs/TraceId" },
+    "match_id": { "$ref": "common.schema.json#/$defs/MatchId" },
+    "moment_id": { "$ref": "common.schema.json#/$defs/MomentId" },
+    "insight_id": { "$ref": "common.schema.json#/$defs/InsightId" },
+    "insight_version": { "type": "integer", "minimum": 1 },
+    "state_version": { "type": "integer", "minimum": 0 },
+    "as_of_session_ms": { "$ref": "common.schema.json#/$defs/Milliseconds" },
+    "runner": { "enum": ["three_agent", "single_agent", "deterministic"] },
+    "outcome": { "enum": ["released", "fallback", "abstained", "superseded", "cancelled"] },
+    "fallback_reason": { "enum": ["timeout", "verifier_rejected", "output_check_failed", "model_error", "expired",
+                                  "insufficient_tracking", "no_supported_claim"] },
+    "fixture": { "enum": ["bad_claim", "model_timeout"] },
+    "model_deployment": { "type": "string" },
+    "trigger_receipt_ms": { "type": "integer", "minimum": 0 },
+    "deadline_ms": { "type": "integer", "minimum": 0 },
+    "started_ms": { "type": "integer", "minimum": 0 },
+    "finished_ms": { "type": "integer", "minimum": 0 },
+    "narrative_latency_ms": { "type": "integer", "minimum": 0, "description": "release broadcast − trigger receipt; absent if nothing was broadcast" },
+    "steps": { "type": "array", "items": { "$ref": "#/$defs/TraceStep" } },
+    "claims": { "type": "array", "items": { "$ref": "#/$defs/ClaimTraceEntry" } },
+    "producer_output": { "$ref": "claim.schema.json#/$defs/ProducerOutput" },
+    "check_failures": { "type": "array", "items": { "$ref": "#/$defs/CheckFailure" } },
+    "released_claim_ids": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/ClaimId" } },
+    "usage": { "$ref": "#/$defs/Usage" }
+  },
+  "$defs": {
+    "TraceStep": {
+      "type": "object",
+      "required": ["index", "role", "attempt", "started_ms", "latency_ms", "status", "input_ids", "tool_calls"],
+      "additionalProperties": false,
+      "properties": {
+        "index": { "type": "integer", "minimum": 0 },
+        "role": { "enum": ["gate", "analyst", "verifier_precheck", "verifier", "producer", "checks", "fallback", "single_agent", "deterministic"] },
+        "attempt": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "prompt_version": { "type": "string", "pattern": "^[a-z_]+\\.v[0-9]+$" },
+        "started_ms": { "type": "integer", "minimum": 0 },
+        "latency_ms": { "type": "integer", "minimum": 0 },
+        "budget_ms": { "type": "integer", "minimum": 0 },
+        "status": { "enum": ["ok", "timeout", "model_error", "skipped", "failed"] },
+        "error": { "type": "string", "maxLength": 200 },
+        "injected_fault": { "enum": ["bad_claim", "model_timeout"] },
+        "input_ids": { "type": "array", "items": { "type": "string" }, "description": "Moment, claim, evidence IDs given to the step" },
+        "tool_calls": { "type": "array", "items": { "$ref": "#/$defs/ToolCallRecord" } },
+        "analyst_output": { "$ref": "claim.schema.json#/$defs/AnalystOutput" },
+        "verdicts": { "type": "array", "items": { "$ref": "claim.schema.json#/$defs/Verdict" } },
+        "producer_output": { "$ref": "claim.schema.json#/$defs/ProducerOutput" },
+        "check_failures": { "type": "array", "items": { "$ref": "#/$defs/CheckFailure" } },
+        "usage": { "$ref": "#/$defs/Usage" }
+      }
+    },
+    "ToolCallRecord": {
+      "type": "object",
+      "required": ["tool", "args", "status", "result_ids", "latency_ms"],
+      "additionalProperties": false,
+      "properties": {
+        "tool": { "enum": ["get_match_snapshot", "get_event_window", "get_metric", "inspect_geometry", "build_recap_candidates"] },
+        "args": { "type": "object" },
+        "status": { "enum": ["ok", "error"] },
+        "error_code": { "enum": ["future_evidence", "unknown_metric", "unknown_event", "invalid_window", "invalid_params", "insufficient_tracking"] },
+        "result_ids": { "type": "array", "items": { "type": "string" } },
+        "latency_ms": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "ClaimTraceEntry": {
+      "type": "object",
+      "required": ["claim", "attempt", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "claim": { "$ref": "claim.schema.json#/$defs/Claim" },
+        "attempt": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "precheck": { "$ref": "claim.schema.json#/$defs/Verdict" },
+        "model_verdict": { "$ref": "claim.schema.json#/$defs/Verdict" },
+        "final": { "$ref": "claim.schema.json#/$defs/Verdict" },
+        "status": { "enum": ["proposed", "approved", "rejected", "revised", "superseded", "unused"] },
+        "superseded_by": { "$ref": "common.schema.json#/$defs/ClaimId" },
+        "injected_fault": { "enum": ["bad_claim"] }
+      }
+    },
+    "CheckFailure": {
+      "type": "object",
+      "required": ["code", "detail"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "enum": ["unsupported_number", "unsupported_player", "unknown_evidence", "invalid_timing", "expired",
+                           "unapproved_claim", "unrequested_annotation", "unresolvable_annotation", "future_evidence",
+                           "title_mismatch", "unknown_template", "causal_overreach", "variant_inconsistent", "schema_invalid"] },
+        "detail": { "type": "string", "maxLength": 200 },
+        "mode": { "$ref": "common.schema.json#/$defs/ViewerMode" },
+        "language": { "$ref": "common.schema.json#/$defs/Language" }
+      }
+    },
+    "Usage": {
+      "type": "object",
+      "required": ["model_calls"],
+      "additionalProperties": false,
+      "properties": {
+        "model_calls": { "type": "integer", "minimum": 0 },
+        "tokens_in": { "type": ["integer", "null"], "minimum": 0 },
+        "tokens_out": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    }
+  }
+}

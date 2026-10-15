@@ -1,0 +1,693 @@
+{
+  "schema_version": "1.0",
+  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "match_id": "demo-blue-amber-001",
+  "moment_id": "mom-0045",
+  "insight_id": "ins-0045",
+  "insight_version": 1,
+  "state_version": 512,
+  "as_of_session_ms": 46500,
+  "runner": "three_agent",
+  "outcome": "released",
+  "fixture": "bad_claim",
+  "model_deployment": "scripted",
+  "trigger_receipt_ms": 1760422600000,
+  "deadline_ms": 1760422608000,
+  "started_ms": 1760422600020,
+  "finished_ms": 1760422604815,
+  "narrative_latency_ms": 4815,
+  "steps": [
+    {
+      "index": 0,
+      "role": "gate",
+      "attempt": 1,
+      "started_ms": 1760422600020,
+      "latency_ms": 2,
+      "status": "ok",
+      "input_ids": [
+        "mom-0045"
+      ],
+      "tool_calls": []
+    },
+    {
+      "index": 1,
+      "role": "analyst",
+      "attempt": 1,
+      "prompt_version": "analyst.v1",
+      "started_ms": 1760422600030,
+      "latency_ms": 1420,
+      "budget_ms": 3500,
+      "status": "ok",
+      "injected_fault": "bad_claim",
+      "input_ids": [
+        "mom-0045",
+        "evt-0042",
+        "evt-0045",
+        "metric-forward_progress-0042",
+        "metric-channel-0042",
+        "metric-defender_follow-0042",
+        "metric-off_ball_run-0042"
+      ],
+      "tool_calls": [
+        {
+          "tool": "get_match_snapshot",
+          "args": {},
+          "status": "ok",
+          "result_ids": [
+            "evt-0045"
+          ],
+          "latency_ms": 2
+        },
+        {
+          "tool": "get_event_window",
+          "args": {
+            "start_ms": 36000,
+            "end_ms": 46500
+          },
+          "status": "ok",
+          "result_ids": [
+            "evt-0042",
+            "evt-0045"
+          ],
+          "latency_ms": 2
+        },
+        {
+          "tool": "get_metric",
+          "args": {
+            "metric_id": "metric-channel-0042"
+          },
+          "status": "ok",
+          "result_ids": [
+            "metric-channel-0042"
+          ],
+          "latency_ms": 3
+        },
+        {
+          "tool": "get_metric",
+          "args": {
+            "metric_id": "metric-defender_follow-0042"
+          },
+          "status": "ok",
+          "result_ids": [
+            "metric-defender_follow-0042"
+          ],
+          "latency_ms": 2
+        },
+        {
+          "tool": "get_metric",
+          "args": {
+            "metric_id": "metric-off_ball_run-0042"
+          },
+          "status": "ok",
+          "result_ids": [
+            "metric-off_ball_run-0042"
+          ],
+          "latency_ms": 2
+        },
+        {
+          "tool": "get_metric",
+          "args": {
+            "metric_id": "metric-forward_progress-0042"
+          },
+          "status": "ok",
+          "result_ids": [
+            "metric-forward_progress-0042"
+          ],
+          "latency_ms": 1
+        },
+        {
+          "tool": "inspect_geometry",
+          "args": {
+            "kind": "positions",
+            "params": {
+              "player_ids": [
+                "blue-09",
+                "amber-04"
+              ]
+            },
+            "at_ms": 42300
+          },
+          "status": "ok",
+          "result_ids": [
+            "frm-000423"
+          ],
+          "latency_ms": 2
+        }
+      ],
+      "analyst_output": {
+        "moment_id": "mom-0045",
+        "claims": [
+          {
+            "claim_id": "clm-0045-1",
+            "kind": "fact",
+            "template_id": "fact.forward_pass",
+            "slots": {
+              "passer": {
+                "kind": "player",
+                "player_id": "blue-08"
+              },
+              "receiver": {
+                "kind": "player",
+                "player_id": "blue-11"
+              },
+              "progress": {
+                "kind": "metric",
+                "metric_id": "metric-forward_progress-0042",
+                "value": 13.1,
+                "unit": "m"
+              }
+            },
+            "evidence_ids": [
+              "evt-0042",
+              "metric-forward_progress-0042"
+            ],
+            "uncertainty": "low"
+          },
+          {
+            "claim_id": "clm-0045-2",
+            "kind": "fact",
+            "template_id": "interp.space_opened_by_run",
+            "slots": {
+              "runner": {
+                "kind": "player",
+                "player_id": "blue-09"
+              },
+              "defender": {
+                "kind": "player",
+                "player_id": "amber-04"
+              },
+              "channel_gain": {
+                "kind": "metric",
+                "metric_id": "metric-channel-0042",
+                "value": 5.3,
+                "unit": "m"
+              }
+            },
+            "evidence_ids": [
+              "metric-off_ball_run-0042",
+              "metric-defender_follow-0042",
+              "metric-channel-0042",
+              "evt-0042"
+            ],
+            "uncertainty": "low",
+            "requested_annotations": [
+              "highlight_blue_09",
+              "path_amber_04",
+              "show_channel_0042"
+            ],
+            "rationale": "blue-09's run forced amber-04 out of the channel."
+          }
+        ],
+        "abstained": false
+      },
+      "usage": {
+        "model_calls": 1,
+        "tokens_in": 1900,
+        "tokens_out": 260
+      }
+    },
+    {
+      "index": 2,
+      "role": "verifier_precheck",
+      "attempt": 1,
+      "started_ms": 1760422601455,
+      "latency_ms": 4,
+      "status": "ok",
+      "input_ids": [
+        "clm-0045-1",
+        "clm-0045-2"
+      ],
+      "tool_calls": [],
+      "verdicts": [
+        {
+          "claim_id": "clm-0045-1",
+          "decision": "approve",
+          "reason_codes": [
+            "ok"
+          ]
+        },
+        {
+          "claim_id": "clm-0045-2",
+          "decision": "revise",
+          "reason_codes": [
+            "template_kind_mismatch",
+            "value_mismatch"
+          ],
+          "note": "interp template marked fact; channel_gain 5.3 differs from engine 3.4"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "role": "verifier",
+      "attempt": 1,
+      "prompt_version": "verifier.v1",
+      "started_ms": 1760422601460,
+      "latency_ms": 910,
+      "budget_ms": 2500,
+      "status": "ok",
+      "input_ids": [
+        "clm-0045-1",
+        "clm-0045-2",
+        "metric-pressure-0042",
+        "metric-receiver_separation-0042"
+      ],
+      "tool_calls": [
+        {
+          "tool": "get_metric",
+          "args": {
+            "metric_id": "metric-pressure-0042"
+          },
+          "status": "ok",
+          "result_ids": [
+            "metric-pressure-0042"
+          ],
+          "latency_ms": 2
+        },
+        {
+          "tool": "get_metric",
+          "args": {
+            "metric_id": "metric-receiver_separation-0042"
+          },
+          "status": "ok",
+          "result_ids": [
+            "metric-receiver_separation-0042"
+          ],
+          "latency_ms": 2
+        }
+      ],
+      "verdicts": [
+        {
+          "claim_id": "clm-0045-1",
+          "decision": "approve",
+          "reason_codes": [
+            "ok"
+          ]
+        },
+        {
+          "claim_id": "clm-0045-2",
+          "decision": "revise",
+          "reason_codes": [
+            "unsupported_causality"
+          ],
+          "note": "rationale asserts the run forced the defender"
+        }
+      ],
+      "usage": {
+        "model_calls": 1,
+        "tokens_in": 1300,
+        "tokens_out": 120
+      }
+    },
+    {
+      "index": 4,
+      "role": "analyst",
+      "attempt": 2,
+      "prompt_version": "analyst.v1",
+      "started_ms": 1760422602380,
+      "latency_ms": 1100,
+      "budget_ms": 3500,
+      "status": "ok",
+      "input_ids": [
+        "clm-0045-2"
+      ],
+      "tool_calls": [],
+      "analyst_output": {
+        "moment_id": "mom-0045",
+        "claims": [
+          {
+            "claim_id": "clm-0045-3",
+            "kind": "interpretation",
+            "template_id": "interp.space_opened_by_run",
+            "slots": {
+              "runner": {
+                "kind": "player",
+                "player_id": "blue-09"
+              },
+              "defender": {
+                "kind": "player",
+                "player_id": "amber-04"
+              },
+              "channel_gain": {
+                "kind": "metric",
+                "metric_id": "metric-channel-0042",
+                "value": 3.4,
+                "unit": "m"
+              }
+            },
+            "evidence_ids": [
+              "metric-off_ball_run-0042",
+              "metric-defender_follow-0042",
+              "metric-channel-0042",
+              "evt-0042"
+            ],
+            "uncertainty": "medium",
+            "requested_annotations": [
+              "highlight_blue_09",
+              "path_amber_04",
+              "show_channel_0042"
+            ],
+            "rationale": "metric-defender_follow-0042 shows amber-04 moving with blue-09 while metric-channel-0042 widened before evt-0042."
+          }
+        ],
+        "abstained": false
+      },
+      "usage": {
+        "model_calls": 1,
+        "tokens_in": 2100,
+        "tokens_out": 180
+      }
+    },
+    {
+      "index": 5,
+      "role": "verifier_precheck",
+      "attempt": 2,
+      "started_ms": 1760422603490,
+      "latency_ms": 3,
+      "status": "ok",
+      "input_ids": [
+        "clm-0045-3"
+      ],
+      "tool_calls": [],
+      "verdicts": [
+        {
+          "claim_id": "clm-0045-3",
+          "decision": "approve",
+          "reason_codes": [
+            "ok"
+          ]
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "role": "verifier",
+      "attempt": 2,
+      "prompt_version": "verifier.v1",
+      "started_ms": 1760422603495,
+      "latency_ms": 700,
+      "budget_ms": 2500,
+      "status": "ok",
+      "input_ids": [
+        "clm-0045-3"
+      ],
+      "tool_calls": [],
+      "verdicts": [
+        {
+          "claim_id": "clm-0045-3",
+          "decision": "approve",
+          "reason_codes": [
+            "ok"
+          ]
+        }
+      ],
+      "usage": {
+        "model_calls": 1,
+        "tokens_in": 1200,
+        "tokens_out": 90
+      }
+    },
+    {
+      "index": 7,
+      "role": "producer",
+      "attempt": 1,
+      "prompt_version": "producer.v1",
+      "started_ms": 1760422604200,
+      "latency_ms": 600,
+      "budget_ms": 1500,
+      "status": "ok",
+      "input_ids": [
+        "clm-0045-1",
+        "clm-0045-3"
+      ],
+      "tool_calls": [],
+      "producer_output": {
+        "moment_id": "mom-0045",
+        "fan": {
+          "title_template_id": "title.space_opened_before_shot",
+          "claim_ids": [
+            "clm-0045-3"
+          ],
+          "annotations": [
+            "highlight_blue_09",
+            "path_amber_04",
+            "show_channel_0042"
+          ],
+          "priority": 2,
+          "panel": "lower_third"
+        },
+        "analyst": {
+          "title_template_id": "title.space_opened_before_shot",
+          "claim_ids": [
+            "clm-0045-3",
+            "clm-0045-1"
+          ],
+          "annotations": [
+            "highlight_blue_09",
+            "path_amber_04",
+            "show_channel_0042"
+          ],
+          "priority": 2,
+          "panel": "side_panel"
+        }
+      },
+      "usage": {
+        "model_calls": 1,
+        "tokens_in": 900,
+        "tokens_out": 110
+      }
+    },
+    {
+      "index": 8,
+      "role": "checks",
+      "attempt": 1,
+      "started_ms": 1760422604805,
+      "latency_ms": 6,
+      "status": "ok",
+      "input_ids": [
+        "ins-0045"
+      ],
+      "tool_calls": [],
+      "check_failures": []
+    }
+  ],
+  "claims": [
+    {
+      "claim": {
+        "claim_id": "clm-0045-1",
+        "kind": "fact",
+        "template_id": "fact.forward_pass",
+        "slots": {
+          "passer": {
+            "kind": "player",
+            "player_id": "blue-08"
+          },
+          "receiver": {
+            "kind": "player",
+            "player_id": "blue-11"
+          },
+          "progress": {
+            "kind": "metric",
+            "metric_id": "metric-forward_progress-0042",
+            "value": 13.1,
+            "unit": "m"
+          }
+        },
+        "evidence_ids": [
+          "evt-0042",
+          "metric-forward_progress-0042"
+        ],
+        "uncertainty": "low"
+      },
+      "attempt": 1,
+      "precheck": {
+        "claim_id": "clm-0045-1",
+        "decision": "approve",
+        "reason_codes": [
+          "ok"
+        ]
+      },
+      "model_verdict": {
+        "claim_id": "clm-0045-1",
+        "decision": "approve",
+        "reason_codes": [
+          "ok"
+        ]
+      },
+      "final": {
+        "claim_id": "clm-0045-1",
+        "decision": "approve",
+        "reason_codes": [
+          "ok"
+        ]
+      },
+      "status": "approved"
+    },
+    {
+      "claim": {
+        "claim_id": "clm-0045-2",
+        "kind": "fact",
+        "template_id": "interp.space_opened_by_run",
+        "slots": {
+          "runner": {
+            "kind": "player",
+            "player_id": "blue-09"
+          },
+          "defender": {
+            "kind": "player",
+            "player_id": "amber-04"
+          },
+          "channel_gain": {
+            "kind": "metric",
+            "metric_id": "metric-channel-0042",
+            "value": 5.3,
+            "unit": "m"
+          }
+        },
+        "evidence_ids": [
+          "metric-off_ball_run-0042",
+          "metric-defender_follow-0042",
+          "metric-channel-0042",
+          "evt-0042"
+        ],
+        "uncertainty": "low",
+        "requested_annotations": [
+          "highlight_blue_09",
+          "path_amber_04",
+          "show_channel_0042"
+        ],
+        "rationale": "blue-09's run forced amber-04 out of the channel."
+      },
+      "attempt": 1,
+      "precheck": {
+        "claim_id": "clm-0045-2",
+        "decision": "revise",
+        "reason_codes": [
+          "template_kind_mismatch",
+          "value_mismatch"
+        ],
+        "note": "interp template marked fact; channel_gain 5.3 differs from engine 3.4"
+      },
+      "model_verdict": {
+        "claim_id": "clm-0045-2",
+        "decision": "revise",
+        "reason_codes": [
+          "unsupported_causality"
+        ],
+        "note": "rationale asserts the run forced the defender"
+      },
+      "final": {
+        "claim_id": "clm-0045-2",
+        "decision": "revise",
+        "reason_codes": [
+          "template_kind_mismatch",
+          "value_mismatch",
+          "unsupported_causality"
+        ],
+        "note": "rationale asserts the run forced the defender"
+      },
+      "status": "revised",
+      "superseded_by": "clm-0045-3",
+      "injected_fault": "bad_claim"
+    },
+    {
+      "claim": {
+        "claim_id": "clm-0045-3",
+        "kind": "interpretation",
+        "template_id": "interp.space_opened_by_run",
+        "slots": {
+          "runner": {
+            "kind": "player",
+            "player_id": "blue-09"
+          },
+          "defender": {
+            "kind": "player",
+            "player_id": "amber-04"
+          },
+          "channel_gain": {
+            "kind": "metric",
+            "metric_id": "metric-channel-0042",
+            "value": 3.4,
+            "unit": "m"
+          }
+        },
+        "evidence_ids": [
+          "metric-off_ball_run-0042",
+          "metric-defender_follow-0042",
+          "metric-channel-0042",
+          "evt-0042"
+        ],
+        "uncertainty": "medium",
+        "requested_annotations": [
+          "highlight_blue_09",
+          "path_amber_04",
+          "show_channel_0042"
+        ],
+        "rationale": "metric-defender_follow-0042 shows amber-04 moving with blue-09 while metric-channel-0042 widened before evt-0042."
+      },
+      "attempt": 2,
+      "precheck": {
+        "claim_id": "clm-0045-3",
+        "decision": "approve",
+        "reason_codes": [
+          "ok"
+        ]
+      },
+      "model_verdict": {
+        "claim_id": "clm-0045-3",
+        "decision": "approve",
+        "reason_codes": [
+          "ok"
+        ]
+      },
+      "final": {
+        "claim_id": "clm-0045-3",
+        "decision": "approve",
+        "reason_codes": [
+          "ok"
+        ]
+      },
+      "status": "approved"
+    }
+  ],
+  "producer_output": {
+    "moment_id": "mom-0045",
+    "fan": {
+      "title_template_id": "title.space_opened_before_shot",
+      "claim_ids": [
+        "clm-0045-3"
+      ],
+      "annotations": [
+        "highlight_blue_09",
+        "path_amber_04",
+        "show_channel_0042"
+      ],
+      "priority": 2,
+      "panel": "lower_third"
+    },
+    "analyst": {
+      "title_template_id": "title.space_opened_before_shot",
+      "claim_ids": [
+        "clm-0045-3",
+        "clm-0045-1"
+      ],
+      "annotations": [
+        "highlight_blue_09",
+        "path_amber_04",
+        "show_channel_0042"
+      ],
+      "priority": 2,
+      "panel": "side_panel"
+    }
+  },
+  "check_failures": [],
+  "released_claim_ids": [
+    "clm-0045-3",
+    "clm-0045-1"
+  ],
+  "usage": {
+    "model_calls": 5,
+    "tokens_in": 7400,
+    "tokens_out": 760
+  }
+}
