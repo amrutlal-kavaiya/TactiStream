@@ -172,6 +172,42 @@ async def test_captions_must_be_text_subtitles(client: httpx.AsyncClient) -> Non
     assert response.json()["error"] == "unsupported_media"
 
 
+@pytest.mark.parametrize(
+    "content_type", ["text/vtt", "application/x-subrip", "text/plain", "application/octet-stream", None]
+)
+async def test_captions_accepted_content_types(client: httpx.AsyncClient, content_type: str | None) -> None:
+    headers = {**AUTH, "Content-Type": content_type} if content_type else AUTH
+    response = await client.put("/api/presenter/media/captions", content=SRT.encode(), headers=headers)
+    assert response.status_code == 200, response.text
+
+
+@pytest.mark.parametrize("content_type", ["text/html", "application/pdf", "video/mp4", "image/svg+xml"])
+async def test_captions_other_content_types_are_422(client: httpx.AsyncClient, content_type: str) -> None:
+    response = await client.put(
+        "/api/presenter/media/captions", content=SRT.encode(), headers={**AUTH, "Content-Type": content_type}
+    )
+    assert response.status_code == 422
+    assert response.json()["error"] == "unsupported_media"
+
+
+async def test_captions_link_is_422(client: httpx.AsyncClient) -> None:
+    response = await client.put(
+        "/api/presenter/media/captions", json={"url": "https://example.com/c.vtt"}, headers=AUTH
+    )
+    assert response.status_code == 422
+    assert response.json()["error"] == "invalid_request"
+    assert (await client.get("/api/presenter/state", headers=AUTH)).json()["slots"] == {}
+
+
+async def test_media_responses_are_nosniff(client: httpx.AsyncClient) -> None:
+    await upload_main(client)
+    await client.put("/api/presenter/publish", json={"published": True}, headers=AUTH)
+    for headers in ({}, {"Range": "bytes=0-1"}, {"Range": "bytes=5000-6000"}):
+        response = await client.get("/media/main", headers=headers)
+        assert response.headers["x-content-type-options"] == "nosniff"
+    assert (await client.head("/media/main")).headers["x-content-type-options"] == "nosniff"
+
+
 async def test_link_https_only(client: httpx.AsyncClient) -> None:
     for url in ["http://youtu.be/abc", "javascript:alert(1)", "https://", "not a url"]:
         response = await client.put("/api/presenter/media/main", json={"url": url}, headers=AUTH)

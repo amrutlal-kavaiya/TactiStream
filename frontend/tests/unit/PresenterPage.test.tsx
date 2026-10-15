@@ -163,6 +163,15 @@ describe('Media slots', () => {
     expect(calls.at(-1)?.headers.get('X-Presenter-Key')).toBe('k1')
     expect(await backup.findByRole('link', { name: 'https://youtu.be/b' })).toBeInTheDocument()
   })
+
+
+  it('offers no link input for captions', async () => {
+    await unlocked()
+    const captions = within(screen.getByRole('region', { name: 'Captions' }))
+    expect(captions.getByLabelText('Choose file')).toBeInTheDocument()
+    expect(captions.queryByLabelText(/YouTube URL/)).not.toBeInTheDocument()
+    expect(captions.queryByRole('button', { name: 'Save link' })).not.toBeInTheDocument()
+  })
 })
 
 describe('Record checklist', () => {

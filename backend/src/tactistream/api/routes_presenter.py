@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 KEY_HEADER = "X-Presenter-Key"
 VIDEO_TYPE = "video/mp4"
 VTT_TYPE = "text/vtt"
+CAPTION_TYPES = frozenset({VTT_TYPE, "application/x-subrip", "text/plain", "application/octet-stream", ""})
 _JSON_BODY_LIMIT = 8 * 1024
 _SRT_TIME = re.compile(r"(\d{2}:\d{2}:\d{2}),(\d{3})")
 _RANGE = re.compile(r"bytes=(\d*)-(\d*)")
@@ -165,7 +166,7 @@ async def _store_file(
     """Returns (content_type, filename, bytes, sha256) after streaming the body into the store."""
     mime = _mime(request)
     if slot is MediaSlot.CAPTIONS:
-        if mime.split("/", 1)[0] in {"video", "audio", "image"}:
+        if mime not in CAPTION_TYPES:
             raise ApiError(422, "unsupported_media", "captions must be .vtt or .srt text")
         limit = ctx.limits.captions_bytes
         vtt = _captions_as_vtt(await _read_capped(request, limit))
@@ -229,6 +230,9 @@ async def put_media(
     ctx = _media(request)
     async with ctx.slot_locks[media_slot]:
         if _mime(request) == "application/json":
+            if media_slot is MediaSlot.CAPTIONS:
+                # A cross-origin <track> without CORS fails silently in the player.
+                raise ApiError(422, "invalid_request", "captions must be uploaded as a file, not linked")
             try:
                 link = _Link.model_validate_json(await _read_capped(request, _JSON_BODY_LIMIT))
             except ValidationError:
@@ -336,7 +340,12 @@ async def get_media(slot: str, request: Request) -> Response:
         raise ApiError(404, "not_found", f"no file in media slot {media_slot.value}")
     content_type = record.content_type or "application/octet-stream"
     etag = f'"{record.sha256}"'
-    headers = {"Accept-Ranges": "bytes", "ETag": etag, "Cache-Control": "no-cache"}
+    headers = {
+        "Accept-Ranges": "bytes",
+        "ETag": etag,
+        "Cache-Control": "no-cache",
+        "X-Content-Type-Options": "nosniff",
+    }
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers=headers)
     try:

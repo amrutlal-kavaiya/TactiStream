@@ -256,22 +256,24 @@ export function MediaSlotCard({
         </Field>
       )}
 
-      <form className={styles.row} onSubmit={(event) => void saveLink(event)}>
-        <Field label={t('mediaLink')} className={styles.grow}>
-          <Input
-            type="url"
-            value={link}
-            placeholder="https://youtu.be/…"
-            disabled={busy}
-            onChange={(_, data) => {
-              setLink(data.value)
-            }}
-          />
-        </Field>
-        <Button type="submit" disabled={busy || link.trim() === ''}>
-          {t('saveLink')}
-        </Button>
-      </form>
+      {isVideo && (
+        <form className={styles.row} onSubmit={(event) => void saveLink(event)}>
+          <Field label={t('mediaLink')} className={styles.grow}>
+            <Input
+              type="url"
+              value={link}
+              placeholder="https://youtu.be/…"
+              disabled={busy}
+              onChange={(_, data) => {
+                setLink(data.value)
+              }}
+            />
+          </Field>
+          <Button type="submit" disabled={busy || link.trim() === ''}>
+            {t('saveLink')}
+          </Button>
+        </form>
+      )}
 
       {error && (
         <MessageBar intent="error" role="alert">
