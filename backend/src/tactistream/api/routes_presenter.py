@@ -27,7 +27,7 @@ VIDEO_TYPE = "video/mp4"
 VTT_TYPE = "text/vtt"
 CAPTION_TYPES = frozenset({VTT_TYPE, "application/x-subrip", "text/plain", "application/octet-stream", ""})
 _JSON_BODY_LIMIT = 8 * 1024
-_SRT_TIME = re.compile(r"(\d{2}:\d{2}:\d{2}),(\d{3})")
+_SRT_TIME = re.compile(r"\b(\d{1,2}):(\d{2}:\d{2}),(\d{3})")
 _RANGE = re.compile(r"bytes=(\d*)-(\d*)")
 
 
@@ -135,7 +135,10 @@ def _validated_https(url: str) -> str:
 
 
 def srt_to_vtt(text: str) -> str:
-    lines = [_SRT_TIME.sub(r"\1.\2", line) if "-->" in line else line for line in text.strip().split("\n")]
+    lines = [
+        _SRT_TIME.sub(lambda m: f"{int(m[1]):02d}:{m[2]}.{m[3]}", line) if "-->" in line else line
+        for line in text.strip().split("\n")
+    ]
     return "WEBVTT\n\n" + "\n".join(lines) + "\n"
 
 
@@ -321,8 +324,10 @@ def parse_range(header: str | None, size: int) -> tuple[int, int] | None:
             raise _RangeNotSatisfiableError
         return max(size - suffix, 0), size - 1
     start = int(first)
+    if last and int(last) < start:
+        return None
     end = min(int(last), size - 1) if last else size - 1
-    if start >= size or start > end:
+    if start >= size:
         raise _RangeNotSatisfiableError
     return start, end
 
@@ -366,5 +371,8 @@ async def get_media(slot: str, request: Request) -> Response:
     if request.method == "HEAD":
         return Response(status_code=status, media_type=content_type, headers=headers)
     return StreamingResponse(
-        ctx.store.read(media_slot, start, length), status_code=status, media_type=content_type, headers=headers
+        ctx.store.read(media_slot, start, length),
+        status_code=status,
+        media_type=content_type,
+        headers=headers,
     )

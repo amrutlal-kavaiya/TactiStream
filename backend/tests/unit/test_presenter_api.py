@@ -7,7 +7,7 @@ import httpx
 import pytest
 
 from tactistream.api.app import create_app
-from tactistream.api.routes_presenter import MediaLimits
+from tactistream.api.routes_presenter import MediaLimits, srt_to_vtt
 from tactistream.settings import Settings
 from tactistream.transport.clock import FakeClock
 
@@ -147,6 +147,11 @@ async def test_captions_srt_saved_as_vtt(client: httpx.AsyncClient, tmp_path: Pa
     assert saved.startswith("WEBVTT\n\n")
     assert "00:00:01.000 --> 00:00:02.500\nHello judges\n" in saved
     assert "," not in saved.split("\n")[3]
+
+
+def test_srt_one_digit_hours_are_zero_padded() -> None:
+    vtt = srt_to_vtt("1\n0:00:01,000 --> 10:00:02,500\nHi\n")
+    assert "00:00:01.000 --> 10:00:02.500\n" in vtt
 
 
 async def test_captions_vtt_kept_and_cap_enforced(client: httpx.AsyncClient) -> None:
@@ -329,6 +334,16 @@ async def test_media_full_and_unsatisfiable(client: httpx.AsyncClient) -> None:
     bad = await client.get("/media/main", headers={"Range": "bytes=5000-6000"})
     assert bad.status_code == 416
     assert bad.headers["content-range"] == f"bytes */{len(VIDEO)}"
+
+
+@pytest.mark.parametrize("header", ["bytes=5-2", "bytes=0-9,20-29", "items=0-9"])
+async def test_invalid_or_multi_range_gets_full_body(client: httpx.AsyncClient, header: str) -> None:
+    await upload_main(client)
+    await client.put("/api/presenter/publish", json={"published": True}, headers=AUTH)
+    response = await client.get("/media/main", headers={"Range": header})
+    assert response.status_code == 200
+    assert response.content == VIDEO
+    assert "content-range" not in response.headers
 
 
 async def test_media_head_has_get_headers_and_no_body(client: httpx.AsyncClient) -> None:
