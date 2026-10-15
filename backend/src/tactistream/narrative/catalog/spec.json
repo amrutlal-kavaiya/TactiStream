@@ -1,39 +1,295 @@
 {
-  "title.forward_pass": {
-    "kind": "title",
-    "slots": {}
-  },
-  "fact.forward_pass": {
-    "kind": "fact",
-    "slots": {
-      "passer": "player",
-      "receiver": "player",
-      "progress": "metric"
+  "catalog_version": "1.1",
+  "templates": {
+    "fact.forward_pass": {
+      "kind": "fact",
+      "slots": {
+        "passer": {
+          "type": "player"
+        },
+        "receiver": {
+          "type": "player"
+        },
+        "progress": {
+          "type": "metric",
+          "metric_kinds": [
+            "forward_progress"
+          ],
+          "unit": "m",
+          "precision": 1
+        }
+      },
+      "required_evidence_kinds": [
+        "forward_progress"
+      ],
+      "requires_tracking": false,
+      "title_keys": [
+        "title.forward_pass"
+      ],
+      "patterns": [
+        "space_creation",
+        "shot",
+        "generic"
+      ]
     },
-    "precision": {
-      "progress": 1
+    "fact.pass_attempted": {
+      "kind": "fact",
+      "slots": {
+        "passer": {
+          "type": "player"
+        }
+      },
+      "required_evidence_kinds": [],
+      "requires_tracking": false,
+      "title_keys": [
+        "title.pass_attempted"
+      ],
+      "patterns": [
+        "generic"
+      ]
+    },
+    "fact.shot": {
+      "kind": "fact",
+      "slots": {
+        "shooter": {
+          "type": "player"
+        },
+        "shot": {
+          "type": "event_time"
+        }
+      },
+      "required_evidence_kinds": [],
+      "requires_tracking": false,
+      "title_keys": [
+        "title.shot"
+      ],
+      "patterns": [
+        "shot",
+        "space_creation"
+      ]
+    },
+    "fact.turnover": {
+      "kind": "fact",
+      "slots": {
+        "winner": {
+          "type": "player"
+        },
+        "loser_team": {
+          "type": "team"
+        },
+        "event": {
+          "type": "event_time"
+        }
+      },
+      "required_evidence_kinds": [],
+      "requires_tracking": false,
+      "title_keys": [
+        "title.turnover"
+      ],
+      "patterns": [
+        "press_turnover"
+      ]
+    },
+    "fact.switch": {
+      "kind": "fact",
+      "slots": {
+        "passer": {
+          "type": "player"
+        },
+        "receiver": {
+          "type": "player"
+        },
+        "event": {
+          "type": "event_time"
+        }
+      },
+      "required_evidence_kinds": [],
+      "requires_tracking": false,
+      "title_keys": [
+        "title.switch"
+      ],
+      "patterns": [
+        "switch_escape"
+      ]
+    },
+    "interp.space_opened_by_run": {
+      "kind": "interpretation",
+      "slots": {
+        "runner": {
+          "type": "player"
+        },
+        "defender": {
+          "type": "player"
+        },
+        "channel_gain": {
+          "type": "metric",
+          "metric_kinds": [
+            "channel"
+          ],
+          "unit": "m",
+          "precision": 1
+        }
+      },
+      "required_evidence_kinds": [
+        "off_ball_run",
+        "defender_follow",
+        "channel"
+      ],
+      "requires_tracking": true,
+      "title_keys": [
+        "title.space_opened_before_shot",
+        "title.space_opened_before_pass"
+      ],
+      "patterns": [
+        "space_creation"
+      ]
+    },
+    "interp.defender_followed_runner": {
+      "kind": "interpretation",
+      "slots": {
+        "runner": {
+          "type": "player"
+        },
+        "defender": {
+          "type": "player"
+        },
+        "follow": {
+          "type": "metric",
+          "metric_kinds": [
+            "defender_follow"
+          ],
+          "unit": "cosine",
+          "precision": 2
+        }
+      },
+      "required_evidence_kinds": [
+        "off_ball_run",
+        "defender_follow"
+      ],
+      "requires_tracking": true,
+      "title_keys": [
+        "title.runner_tracked"
+      ],
+      "patterns": [
+        "space_creation"
+      ]
+    },
+    "interp.pressure_preceded_turnover": {
+      "kind": "interpretation",
+      "slots": {
+        "carrier": {
+          "type": "player"
+        },
+        "winner": {
+          "type": "player"
+        },
+        "pressure": {
+          "type": "metric",
+          "metric_kinds": [
+            "pressure"
+          ],
+          "unit": "score_0_100",
+          "precision": 0
+        }
+      },
+      "required_evidence_kinds": [
+        "pressure"
+      ],
+      "requires_tracking": true,
+      "title_keys": [
+        "title.pressure_before_turnover"
+      ],
+      "patterns": [
+        "press_turnover"
+      ]
+    },
+    "interp.switch_escaped_pressure": {
+      "kind": "interpretation",
+      "slots": {
+        "passer": {
+          "type": "player"
+        },
+        "receiver": {
+          "type": "player"
+        },
+        "pressure_before": {
+          "type": "metric",
+          "metric_kinds": [
+            "pressure"
+          ],
+          "unit": "score_0_100",
+          "precision": 0
+        },
+        "pressure_after": {
+          "type": "metric",
+          "metric_kinds": [
+            "pressure"
+          ],
+          "unit": "score_0_100",
+          "precision": 0
+        }
+      },
+      "required_evidence_kinds": [
+        "pressure"
+      ],
+      "requires_tracking": true,
+      "title_keys": [
+        "title.switch_escape"
+      ],
+      "patterns": [
+        "switch_escape"
+      ]
+    },
+    "status.insufficient_tracking": {
+      "kind": "status"
+    },
+    "title.forward_pass": {
+      "kind": "title"
+    },
+    "title.pass_attempted": {
+      "kind": "title"
+    },
+    "title.shot": {
+      "kind": "title"
+    },
+    "title.turnover": {
+      "kind": "title"
+    },
+    "title.switch": {
+      "kind": "title"
+    },
+    "title.space_opened_before_shot": {
+      "kind": "title"
+    },
+    "title.space_opened_before_pass": {
+      "kind": "title"
+    },
+    "title.runner_tracked": {
+      "kind": "title"
+    },
+    "title.pressure_before_turnover": {
+      "kind": "title"
+    },
+    "title.switch_escape": {
+      "kind": "title"
+    },
+    "outcome.on_target": {
+      "kind": "phrase"
+    },
+    "outcome.off_target": {
+      "kind": "phrase"
+    },
+    "outcome.blocked": {
+      "kind": "phrase"
+    },
+    "outcome.goal": {
+      "kind": "phrase"
+    },
+    "label.synthetic": {
+      "kind": "label"
+    },
+    "label.interpretation": {
+      "kind": "label"
     }
-  },
-  "title.pass_attempted": {
-    "kind": "title",
-    "slots": {}
-  },
-  "fact.pass_attempted": {
-    "kind": "fact",
-    "slots": {
-      "passer": "player"
-    }
-  },
-  "status.insufficient_tracking": {
-    "kind": "status",
-    "slots": {}
-  },
-  "label.synthetic": {
-    "kind": "label",
-    "slots": {}
-  },
-  "label.interpretation": {
-    "kind": "label",
-    "slots": {}
   }
 }

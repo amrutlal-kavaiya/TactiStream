@@ -7,7 +7,6 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from functools import cache
-from pathlib import Path
 from typing import Any
 
 from tactistream.contracts import (
@@ -18,15 +17,12 @@ from tactistream.contracts import (
     SlotValue,
     ViewerMode,
 )
+from tactistream.narrative.templates import CATALOG_DIR, PLACEHOLDER, TemplateError
+from tactistream.narrative.templates import load_catalog as load_template_catalog
 
-CATALOG_DIR = Path(__file__).parent / "catalog"
-_PLACEHOLDER = re.compile(r"\{([a-z_]+)(?:\.([a-z_]+))?\}")
+__all__ = ["RenderContext", "RenderedText", "TemplateError", "load_catalog", "render_claim", "render_title"]
 
 CatalogEntry = str | dict[str, str]
-
-
-class TemplateError(ValueError):
-    """A template is unknown, a slot is missing or unresolvable, or the catalog is inconsistent."""
 
 
 @dataclass(frozen=True)
@@ -50,12 +46,6 @@ def load_catalog(language: Language) -> dict[str, CatalogEntry]:
     return {key: value for key, value in raw.items() if key != "_meta"}
 
 
-@cache
-def load_spec() -> dict[str, dict[str, Any]]:
-    spec: dict[str, dict[str, Any]] = json.loads((CATALOG_DIR / "spec.json").read_text(encoding="utf-8"))
-    return spec
-
-
 def render_title(template_id: str, mode: ViewerMode, language: Language) -> RenderedText:
     if not template_id.startswith("title."):
         raise TemplateError(f"{template_id} is not a title template")
@@ -70,16 +60,12 @@ def render_claim(
     *,
     context: RenderContext | None,
 ) -> RenderedText:
-    spec = load_spec().get(template_id)
-    entry = load_catalog(language).get(template_id)
-    if spec is None or entry is None:
-        raise TemplateError(f"unknown template {template_id} ({language})")
-    template = entry if isinstance(entry, str) else entry.get(mode)
-    if template is None:
-        raise TemplateError(f"template {template_id} has no {mode} variant ({language})")
+    catalog = load_template_catalog()
+    spec = catalog.spec(template_id)
+    template = catalog.text(template_id, mode, language)
 
-    slot_kinds: dict[str, str] = spec["slots"]
-    precision: dict[str, int] = spec.get("precision", {})
+    slot_kinds = {name: slot.type for name, slot in spec.slots.items()}
+    precision = {name: slot.precision for name, slot in spec.slots.items()}
     for name, kind in slot_kinds.items():
         slot = slots.get(name)
         if slot is None:
@@ -113,7 +99,7 @@ def render_claim(
             return number
         raise TemplateError(f"slot kind {slot.kind} is not supported yet")
 
-    return RenderedText(text=_PLACEHOLDER.sub(substitute, template), numbers=numbers, player_ids=player_ids)
+    return RenderedText(text=PLACEHOLDER.sub(substitute, template), numbers=numbers, player_ids=player_ids)
 
 
 def _append_once(items: list[str], item: str) -> None:

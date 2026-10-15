@@ -17,6 +17,46 @@ CheckCode = Literal[
 _EVIDENCE_TOKEN = re.compile(r"\b(?:evt-\d{4,}|frm-\d{6,}|metric-[a-z_]+-\d{4,}(?:-(?:blue|amber)-\d{2})?)\b")
 _NUMBER = re.compile(r"(?:(?<![\w.])-)?(?<![\w.])\d+(?:\.\d+)?(?!\d)")
 
+CAUSAL_LEXICON: tuple[str, ...] = (
+    "caused",
+    "causes",
+    "cause",
+    "forced",
+    "forces",
+    "because of",
+    "because",
+    "deliberately",
+    "deliberate",
+    "intended",
+    "intentionally",
+    "made him",
+    "made her",
+    "made them",
+    "so that",
+    "के कारण",
+    "की वजह से",
+    "कारण बना",
+    "कारण बनी",
+    "मजबूर",
+    "जानबूझकर",
+    "इरादा",
+    "इरादे",
+    "इरादतन",
+)
+# Python's \b treats Devanagari vowel signs as non-word characters, so word edges are spelled out.
+_WORD_CHAR = r"[\w\u0900-\u097F]"
+_CAUSAL = re.compile(
+    rf"(?<!{_WORD_CHAR})(?:"
+    + "|".join(re.escape(term) for term in sorted(CAUSAL_LEXICON, key=len, reverse=True))
+    + rf")(?!{_WORD_CHAR})",
+    re.IGNORECASE,
+)
+
+
+def find_causal_terms(text: str) -> list[str]:
+    """Causal-overreach lexicon terms (spec FR-012) in `text`, lower-cased, longest match first."""
+    return [match.group(0).lower() for match in _CAUSAL.finditer(text)]
+
 
 @dataclass(frozen=True)
 class CheckFailure:

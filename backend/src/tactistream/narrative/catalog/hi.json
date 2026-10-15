@@ -3,23 +3,92 @@
     "language": "hi",
     "status": "draft, review in 006"
   },
-  "title.forward_pass": {
-    "fan": "आगे की ओर पास",
-    "analyst": "आगे की ओर पास"
-  },
   "fact.forward_pass": {
     "fan": "{passer} ने {receiver} को आगे की ओर पास दिया ({progress} मी आगे)।",
     "analyst": "{passer} ने {receiver} को आगे की ओर पास दिया ({progress} मी आगे)। आक्रमण अक्ष पर प्रगति: {progress} मी ({progress.event_ids})।"
-  },
-  "title.pass_attempted": {
-    "fan": "पास का प्रयास",
-    "analyst": "पास का प्रयास"
   },
   "fact.pass_attempted": {
     "fan": "{passer} ने आगे की ओर पास का प्रयास किया।",
     "analyst": "{passer} ने आगे की ओर पास का प्रयास किया। फ़ीड में परिणाम दर्ज नहीं है।"
   },
-  "status.insufficient_tracking": "इस व्याख्या के लिए पर्याप्त ट्रैकिंग उपलब्ध नहीं है",
-  "label.synthetic": "सिंथेटिक",
-  "label.interpretation": "व्याख्या"
+  "fact.shot": {
+    "fan": "{shooter} ने शॉट लिया: {outcome}।",
+    "analyst": "{shooter} ने शॉट लिया: {outcome} ({shot})।"
+  },
+  "fact.turnover": {
+    "fan": "{winner} ने {loser_team} से गेंद जीती।",
+    "analyst": "{winner} ने {loser_team} से कब्ज़ा जीता ({event})।"
+  },
+  "fact.switch": {
+    "fan": "{passer} ने खेल {receiver} की ओर स्विच किया।",
+    "analyst": "{passer} ने खेल {receiver} की ओर स्विच किया ({event})।"
+  },
+  "interp.space_opened_by_run": {
+    "fan": "{runner} की दौड़ ने पास के लिए जगह बनाने में मदद की।",
+    "analyst": "{defender} {runner} की ओर खिसके, और पासिंग चैनल {channel_gain} मी चौड़ा हुआ। अगले फ़ॉरवर्ड पास ने उसी जगह का इस्तेमाल किया।"
+  },
+  "interp.defender_followed_runner": {
+    "fan": "{defender} {runner} की दौड़ के साथ चले।",
+    "analyst": "{defender} की चाल {runner} की दौड़ से मेल खाती रही (दिशा समानता {follow})।"
+  },
+  "interp.pressure_preceded_turnover": {
+    "fan": "गेंद छिनने से पहले {carrier} पर दबाव था।",
+    "analyst": "{winner} के गेंद जीतने से ठीक पहले {carrier} पर दबाव का प्रॉक्सी स्कोर {pressure} था।"
+  },
+  "interp.switch_escaped_pressure": {
+    "fan": "{passer} के स्विच के साथ खेल दबाव से दूर गया।",
+    "analyst": "स्विच के बाद दबाव प्रॉक्सी {passer} पर {pressure_before} से घटकर {receiver} पर {pressure_after} रहा।"
+  },
+  "status.insufficient_tracking": {
+    "fan": "इस व्याख्या के लिए पर्याप्त ट्रैकिंग नहीं है।",
+    "analyst": "इस व्याख्या के लिए पर्याप्त ट्रैकिंग नहीं है।"
+  },
+  "title.forward_pass": {
+    "text": "आगे की ओर पास"
+  },
+  "title.pass_attempted": {
+    "text": "पास का प्रयास"
+  },
+  "title.shot": {
+    "text": "शॉट"
+  },
+  "title.turnover": {
+    "text": "गेंद जीती"
+  },
+  "title.switch": {
+    "text": "खेल का स्विच"
+  },
+  "title.space_opened_before_shot": {
+    "text": "शॉट से पहले जगह बनी"
+  },
+  "title.space_opened_before_pass": {
+    "text": "पास से पहले जगह बनी"
+  },
+  "title.runner_tracked": {
+    "text": "डिफ़ेंडर दौड़ के साथ गया"
+  },
+  "title.pressure_before_turnover": {
+    "text": "टर्नओवर से पहले दबाव"
+  },
+  "title.switch_escape": {
+    "text": "दबाव से दूर स्विच"
+  },
+  "outcome.on_target": {
+    "text": "लक्ष्य पर"
+  },
+  "outcome.off_target": {
+    "text": "लक्ष्य से बाहर"
+  },
+  "outcome.blocked": {
+    "text": "रोका गया"
+  },
+  "outcome.goal": {
+    "text": "गोल"
+  },
+  "label.synthetic": {
+    "text": "सिंथेटिक"
+  },
+  "label.interpretation": {
+    "text": "व्याख्या"
+  }
 }
