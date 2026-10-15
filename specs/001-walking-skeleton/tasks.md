@@ -131,7 +131,7 @@ every US1 behaviour and test unchanged.
 - [x] T059 Implement `frontend/src/theme/{brand.ts,useThemePreference.ts,AppShell.tsx}` (FluentProvider, grid layout: header, command bar, stage + 360 px right rail, stacks below 900 px); run T058 → green
 - [x] T060 Update `frontend/tests/unit/{InsightCard,EvidenceDrawer,App}.test.tsx` to Fluent roles where markup changes (behaviour assertions unchanged, StrictMode/inert focus-return test kept) and extend `tokens.test.ts`: team colours and text vs `colorNeutralBackground1`/`colorNeutralBackground2` of both brand themes ≥ 4.5:1 for text, ≥ 3:1 for non-text team swatches
 - [x] T061 Rebuild `TopBar`, `SourceBadge`, `PlaybackControls` (Toolbar + icons + tooltips), `InsightCard` (Card), `EvidenceDrawer` (OverlayDrawer), `EventList` (Table) and notices (MessageBar) per the registry component map; stage shows a placeholder Card "Pitch view arrives with tactical replay"; reduce `app.css` to reset + grid and `tokens.css` to team/pitch tokens; run unit suites → green
-- [ ] T062 Extend `frontend/tests/e2e/skeleton.spec.ts`: existing flow unchanged + theme toggle switches and persists across reload + `@axe-core/playwright` scan (dark and light) with zero serious/critical violations; run `--repeat-each=5`
+- [x] T062 Extend `frontend/tests/e2e/skeleton.spec.ts`: existing flow unchanged + theme toggle switches and persists across reload + `@axe-core/playwright` scan (dark and light) with zero serious/critical violations; run `--repeat-each=5`
 - [ ] T063 Capture screenshots (dark and light, card visible, drawer open) to `docs/screenshots/001-fluent-{dark,light,drawer}.png` via Playwright; record post-change gzipped bundle size in the batch report
 
 ---
