@@ -43,6 +43,9 @@ export class MockXHR {
   upload: { onprogress: ((event: ProgressEvent) => void) | null } = { onprogress: null }
   onload: (() => void) | null = null
   onerror: (() => void) | null = null
+  onabort: (() => void) | null = null
+  ontimeout: (() => void) | null = null
+  aborted = false
 
   open(method: string, url: string) {
     this.method = method
@@ -56,6 +59,11 @@ export class MockXHR {
   send(body: unknown) {
     this.body = body
     MockXHR.instances.push(this)
+  }
+
+  abort() {
+    this.aborted = true
+    this.onabort?.()
   }
 
   respond(status: number, body: unknown) {

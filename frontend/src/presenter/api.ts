@@ -62,6 +62,7 @@ export function uploadMedia(
   meta: VideoMeta | null,
   key: string,
   onProgress: (fraction: number) => void,
+  signal?: AbortSignal,
 ): Promise<MediaRecord> {
   const params = new URLSearchParams({ filename: file.name })
   if (meta) {
@@ -70,7 +71,16 @@ export function uploadMedia(
     params.set('height', String(meta.height))
   }
   return new Promise((resolve, reject) => {
+    const aborted = () => new DOMException('upload cancelled', 'AbortError')
+    if (signal?.aborted) {
+      reject(aborted())
+      return
+    }
     const xhr = new XMLHttpRequest()
+    const onSignal = () => {
+      xhr.abort()
+    }
+    const settle = () => signal?.removeEventListener('abort', onSignal)
     xhr.open('PUT', `/api/presenter/media/${slot}?${params.toString()}`)
     xhr.setRequestHeader('X-Presenter-Key', key)
     xhr.setRequestHeader('Content-Type', uploadContentType(slot, file))
@@ -78,12 +88,19 @@ export function uploadMedia(
       if (event.lengthComputable && event.total > 0) onProgress(event.loaded / event.total)
     }
     xhr.onload = () => {
+      settle()
       if (xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText) as MediaRecord)
       else reject(apiError(xhr.status, xhr.responseText))
     }
-    xhr.onerror = () => {
+    xhr.onerror = xhr.ontimeout = () => {
+      settle()
       reject(new ApiError(0, 'network_error', 'upload failed'))
     }
+    xhr.onabort = () => {
+      settle()
+      reject(aborted())
+    }
+    signal?.addEventListener('abort', onSignal)
     xhr.send(file)
   })
 }
