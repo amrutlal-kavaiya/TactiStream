@@ -155,14 +155,19 @@ function RecordChecklist() {
   )
 }
 
-function KeyForm({ refused, onSubmit }: { refused: boolean; onSubmit: (key: string) => void }) {
+function KeyForm({ refused, onSubmit }: { refused: boolean; onSubmit: (key: string) => Promise<void> }) {
   const t = useT()
   const styles = useStyles()
   const [key, setKey] = useState('')
+  const [checking, setChecking] = useState(false)
 
   function submit(event: SubmitEvent) {
     event.preventDefault()
-    if (key) onSubmit(key)
+    if (!key || checking) return
+    setChecking(true)
+    void onSubmit(key).finally(() => {
+      setChecking(false)
+    })
   }
 
   return (
@@ -184,7 +189,7 @@ function KeyForm({ refused, onSubmit }: { refused: boolean; onSubmit: (key: stri
             }}
           />
         </Field>
-        <Button type="submit" appearance="primary" icon={<LockOpen20Regular />} disabled={!key}>
+        <Button type="submit" appearance="primary" icon={<LockOpen20Regular />} disabled={!key || checking}>
           {t('unlock')}
         </Button>
       </form>
@@ -199,6 +204,7 @@ export function PresenterPage() {
   const { themeName, toggleTheme } = useThemePreference()
   const [access, setAccess] = useState<Access>({ kind: 'loading' })
   const [publishError, setPublishError] = useState<MessageKey | null>(null)
+  const [publishing, setPublishing] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -210,8 +216,8 @@ export function PresenterPage() {
     }
   }, [])
 
-  function unlock(key: string) {
-    void resolveAccess(key).then(setAccess)
+  async function unlock(key: string) {
+    setAccess(await resolveAccess(key))
   }
 
   const lock = useCallback(() => {
@@ -229,6 +235,7 @@ export function PresenterPage() {
 
   async function publish(key: string, published: boolean) {
     setPublishError(null)
+    setPublishing(true)
     try {
       const state = await setPublished(published, key)
       setAccess({ kind: 'ready', key, state })
@@ -238,6 +245,8 @@ export function PresenterPage() {
         setPublishError(
           error instanceof ApiError && error.code === 'main_missing' ? 'publishNeedsMain' : 'errorPresenter',
         )
+    } finally {
+      setPublishing(false)
     }
   }
 
@@ -301,7 +310,7 @@ export function PresenterPage() {
             <Switch
               label={t('publishSwitch')}
               checked={access.state.published && Boolean(access.state.slots.main)}
-              disabled={!access.state.slots.main}
+              disabled={publishing || !access.state.slots.main}
               onChange={(_, data) => void publish(access.key, data.checked)}
             />
             <Text className={styles.hint}>

@@ -80,6 +80,28 @@ describe('PresenterPage access', () => {
     expect(calls.at(-1)?.headers.get('X-Presenter-Key')).toBe('k1')
   })
 
+  it('disables Unlock while the key is being checked', async () => {
+    render(<PresenterPage />)
+    const input = await screen.findByLabelText('Presenter key')
+    let release: () => void = () => undefined
+    vi.mocked(fetch).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () => {
+            resolve(new Response(JSON.stringify(empty), { status: 200 }))
+          }
+        }),
+    )
+    await userEvent.type(input, 'k1')
+    await userEvent.click(screen.getByRole('button', { name: 'Unlock' }))
+
+    expect(screen.getByRole('button', { name: 'Unlock' })).toBeDisabled()
+    act(() => {
+      release()
+    })
+    expect(await screen.findByRole('heading', { name: '1. Rehearse' })).toBeInTheDocument()
+  })
+
   it('refuses a wrong key, forgets it and keeps the steps hidden', async () => {
     render(<PresenterPage />)
     await userEvent.type(await screen.findByLabelText('Presenter key'), 'nope')
@@ -252,6 +274,32 @@ describe('Publish', () => {
     const call = calls.find((c) => c.key === 'PUT /api/presenter/publish')
     expect(call?.body).toEqual({ published: true })
     expect(call?.headers.get('X-Presenter-Key')).toBe('k1')
+  })
+
+  it('is disabled while the publish request runs', async () => {
+    await unlocked({ slots: { main: mainRecord }, published: false })
+    let release: () => void = () => undefined
+    vi.mocked(fetch).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () => {
+            resolve(
+              new Response(JSON.stringify({ slots: { main: mainRecord }, published: true }), { status: 200 }),
+            )
+          }
+        }),
+    )
+    const toggle = screen.getByRole('switch', { name: 'Publish to judges' })
+    await userEvent.click(toggle)
+
+    expect(toggle).toBeDisabled()
+    act(() => {
+      release()
+    })
+    await waitFor(() => {
+      expect(toggle).toBeChecked()
+    })
+    expect(toggle).toBeEnabled()
   })
 
   it('is disabled until the main video is uploaded or linked', async () => {
