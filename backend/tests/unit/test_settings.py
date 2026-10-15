@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from pydantic import ValidationError
+from pydantic import SecretStr, ValidationError
 
 from tactistream.settings import Settings
 
@@ -62,7 +62,10 @@ def test_every_env_example_name_is_read(monkeypatch: pytest.MonkeyPatch) -> None
     }
     for name in example_names():
         monkeypatch.setenv(name, values.get(name, f"v-{name.lower()}"))
-    dumped = {str(v) for v in Settings(_env_file=None).model_dump().values()}
+    dumped = {
+        v.get_secret_value() if isinstance(v, SecretStr) else str(v)
+        for v in Settings(_env_file=None).model_dump().values()
+    }
     for name in example_names():
         assert values.get(name, f"v-{name.lower()}") in dumped, name
 

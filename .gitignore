@@ -1,5 +1,8 @@
 .superpowers/
 
+# Presenter media (spec 009 FR-029)
+data/media/
+
 # Environment
 .env
 .env.*

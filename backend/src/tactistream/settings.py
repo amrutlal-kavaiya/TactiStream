@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _REPO_ROOT = Path(__file__).parents[3]
@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     )
     history_timeout_ms: int = Field(default=1500, gt=0, validation_alias="TACTISTREAM_HISTORY_TIMEOUT_MS")
     environment: str = Field(default="dev", min_length=1, validation_alias="TACTISTREAM_ENVIRONMENT")
+    presenter_key: SecretStr | None = Field(default=None, validation_alias="TACTISTREAM_PRESENTER_KEY")
 
     @model_validator(mode="after")
     def _required_endpoints(self) -> Settings:
